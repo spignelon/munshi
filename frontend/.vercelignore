@@ -1,7 +1,8 @@
-node_modules
-e2e
-screenshots
-test-results
-playwright-report
+/node_modules
+/e2e
+/screenshots
+/test-results
+/playwright-report
+/scripts
 *.db
 .vercel
