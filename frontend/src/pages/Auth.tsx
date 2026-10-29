@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Logo } from "../components/Logo";
@@ -42,6 +42,7 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<unknown>(null);
   const [busy, setBusy] = useState<"login" | "demo" | null>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr(null); setBusy("login");
@@ -55,12 +56,14 @@ export function Login() {
     <AuthLayout title="Welcome back" sub="Log in to your Munshi dashboard." footer={<>New here? <Link to="/signup" className="font-bold text-saffron-700 underline">Create an account</Link></>}>
       <form onSubmit={submit} className="space-y-4">
         <Field label="Email">{(id) => <Input id={id} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />}</Field>
-        <Field label="Password">{(id) => <Input id={id} type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}</Field>
+        <Field label="Password">{(id) => <Input id={id} ref={passwordRef} type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}</Field>
         {err != null && <ErrorNote error={err} />}
         <Button type="submit" size="lg" className="w-full" loading={busy === "login"}>Log in</Button>
       </form>
       <div className="my-5 flex items-center gap-3 text-xs text-ink-400"><span className="h-px flex-1 bg-cream-300" />or<span className="h-px flex-1 bg-cream-300" /></div>
       <Button variant="dark" size="lg" className="w-full" onClick={tryDemo} loading={busy === "demo"}>Try the demo</Button>
+      <button type="button" onClick={() => { setEmail("admin@munshi.app"); passwordRef.current?.focus(); }}
+        className="mt-4 w-full text-center text-sm font-semibold text-ink-500 underline-offset-2 hover:text-navy-900 hover:underline">Admin login</button>
     </AuthLayout>
   );
 }

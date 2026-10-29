@@ -93,7 +93,7 @@ export function Field({ label, hint, children, className }: { label: string; hin
     </div>
   );
 }
-export const Input = ({ className, ...p }: InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={clsx(fieldCls, className)} />;
+export const Input = ({ className, ...p }: InputHTMLAttributes<HTMLInputElement> & { ref?: React.Ref<HTMLInputElement> }) => <input {...p} className={clsx(fieldCls, className)} />;
 export const Textarea = ({ className, ...p }: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...p} className={clsx(fieldCls, "min-h-24", className)} />;
 export const Select = ({ className, ...p }: SelectHTMLAttributes<HTMLSelectElement>) => <select {...p} className={clsx(fieldCls, "appearance-auto", className)} />;
 
