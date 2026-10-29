@@ -8,10 +8,11 @@ calls to your own sandbox-joined phone.
 import random
 from datetime import date, datetime, timedelta
 
+from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
 from . import clock
-from .auth import hash_password
+from .auth import hash_password, verify_password
 from .config import get_settings
 from .models import (Action, AuditLog, Approval, Brief, CallSession, Customer, DailySale, Message, OutboundMessage,
                      PayLink, Plan, Product, Shop, Supplier, UdhaarEntry, User)
@@ -91,7 +92,7 @@ def _names(rng: random.Random, n: int) -> list[str]:
     return names
 
 
-def wipe_shop_data(db: Session, shop_id: int) -> None:
+def wipe_shop_data(db: Session, shop_id: int, commit: bool = True) -> None:
     act_ids = [a.id for a in db.query(Action.id).filter(Action.shop_id == shop_id)]
     if act_ids:
         db.query(CallSession).filter(CallSession.action_id.in_(act_ids)).delete(synchronize_session=False)
@@ -99,85 +100,98 @@ def wipe_shop_data(db: Session, shop_id: int) -> None:
     for model in (OutboundMessage, Message, Action, Approval, Plan, PayLink, Brief, UdhaarEntry, DailySale, Product,
                   Customer, Supplier, AuditLog):
         db.query(model).filter(model.shop_id == shop_id).delete(synchronize_session=False)
-    db.commit()
+    if commit:
+        db.commit()
+
+
+def _bulk(db: Session, model, rows: list[dict], chunk: int = 40) -> None:
+    """Multi-row INSERTs: a handful of round-trips instead of one per row (matters a lot over Turso)."""
+    for i in range(0, len(rows), chunk):
+        db.execute(insert(model).values(rows[i:i + chunk]))
 
 
 def seed_demo(db: Session, shop: Shop) -> dict:
+    """Wipe + reseed one shop atomically (single transaction: a failure leaves the old data intact)."""
     rng = random.Random(42)
     today = clock.today()
-    wipe_shop_data(db, shop.id)
+    now = datetime.utcnow()
+    try:
+        wipe_shop_data(db, shop.id, commit=False)
 
-    shop.name = "Raj Kirana Store"
-    shop.locality = "Lajpat Nagar, Delhi"
-    shop.upi_vpa = shop.upi_vpa or "rajkirana@paytm"
-    shop.daily_spend_cap = 75000
-    shop.per_order_cap = 50000
-    shop.onboarded = True
-    shop.demo_loaded = True
+        shop.name = "Raj Kirana Store"
+        shop.locality = "Lajpat Nagar, Delhi"
+        shop.upi_vpa = shop.upi_vpa or "rajkirana@paytm"
+        shop.daily_spend_cap = 75000
+        shop.per_order_cap = 50000
+        shop.onboarded = True
+        shop.demo_loaded = True
 
-    suppliers = [Supplier(shop_id=shop.id, name=n, phone=_phone(i + 1), categories=c) for i, (n, c) in enumerate(SUPPLIERS)]
-    db.add_all(suppliers)
-    db.flush()
+        _bulk(db, Supplier, [dict(shop_id=shop.id, name=n, phone=_phone(i + 1), categories=c, notes="") for i, (n, c) in enumerate(SUPPLIERS)])
+        sup_id = dict(db.execute(select(Supplier.name, Supplier.id).where(Supplier.shop_id == shop.id)).all())
 
-    db.add_all([
-        Product(shop_id=shop.id, supplier_id=suppliers[p[3]].id, name=p[0], category=p[1], unit=p[2], stock=p[4],
-                reorder_level=p[5], unit_cost=p[6], price=p[7], avg_daily_units=p[8], last_festival_units=p[9])
-        for p in PRODUCTS
-    ])
+        _bulk(db, Product, [
+            dict(shop_id=shop.id, supplier_id=sup_id[SUPPLIERS[p[3]][0]], name=p[0], category=p[1], unit=p[2], stock=p[4], reorder_level=p[5],
+                 unit_cost=p[6], price=p[7], avg_daily_units=p[8], last_festival_units=p[9], incoming_qty=0, incoming_eta="")
+            for p in PRODUCTS])
 
-    # --- 90 days of Paytm payments (~Rs 14,000/day, ~340 payments/day), festive ramp in the last 12 days
-    for back in range(89, -1, -1):
-        d = today - timedelta(days=back)
-        base = 14000 * (1.18 if d.weekday() >= 5 else 1.0) * rng.uniform(0.9, 1.1)
-        if back <= 12:
-            base *= 1 + (12 - back) * 0.018
-        amount = round(base, 2)
-        if back == 0:  # today is partial, shop opens 7am
-            amount = round(amount * 0.62, 2)
-        db.add(DailySale(shop_id=shop.id, day=d, amount=amount, payments=int(amount / 41.2)))
+        # --- 90 days of Paytm payments (~Rs 14,000/day, ~340 payments/day), festive ramp in the last 12 days
+        sales = []
+        for back in range(89, -1, -1):
+            d = today - timedelta(days=back)
+            base = 14000 * (1.18 if d.weekday() >= 5 else 1.0) * rng.uniform(0.9, 1.1)
+            if back <= 12:
+                base *= 1 + (12 - back) * 0.018
+            amount = round(base, 2)
+            if back == 0:  # today is partial, shop opens 7am
+                amount = round(amount * 0.62, 2)
+            sales.append(dict(shop_id=shop.id, day=d, amount=amount, payments=int(amount / 41.2)))
+        _bulk(db, DailySale, sales)
 
-    # --- 41 udhaar customers owing exactly Rs 38,000
-    names = _names(rng, 41 + 60 + 25)
-    udhaar_names, lapsed_names, active_names = names[:41], names[41:101], names[101:]
-    weights = [rng.uniform(0.3, 2.2) for _ in udhaar_names]
-    scale = 38000 / sum(weights)
-    balances = [max(100, int(round(w * scale / 10.0)) * 10) for w in weights]
-    balances[-1] += 38000 - sum(balances)
+        # --- 41 udhaar customers owing exactly Rs 38,000, 60 lapsed regulars, 25 active regulars
+        names = _names(rng, 41 + 60 + 25)
+        udhaar_names, lapsed_names, active_names = names[:41], names[41:101], names[101:]
+        weights = [rng.uniform(0.3, 2.2) for _ in udhaar_names]
+        scale = 38000 / sum(weights)
+        balances = [max(100, int(round(w * scale / 10.0)) * 10) for w in weights]
+        balances[-1] += 38000 - sum(balances)
 
-    customers: list[Customer] = []
-    for i, nm in enumerate(udhaar_names):
-        customers.append(Customer(shop_id=shop.id, name=nm, phone=_phone(100 + i),
-                                  last_visit=today - timedelta(days=rng.randint(0, 20)),
+        cust_rows = []
+        for i, nm in enumerate(udhaar_names):
+            cust_rows.append(dict(shop_id=shop.id, name=nm, phone=_phone(100 + i), last_visit=today - timedelta(days=rng.randint(0, 20)),
                                   visits=rng.randint(15, 80), lifetime_spend=rng.randint(8000, 40000)))
-    for i, nm in enumerate(lapsed_names):
-        customers.append(Customer(shop_id=shop.id, name=nm, phone=_phone(200 + i),
-                                  last_visit=today - timedelta(days=rng.randint(35, 140)),
+        for i, nm in enumerate(lapsed_names):
+            cust_rows.append(dict(shop_id=shop.id, name=nm, phone=_phone(200 + i), last_visit=today - timedelta(days=rng.randint(35, 140)),
                                   visits=rng.randint(12, 60), lifetime_spend=rng.randint(6000, 30000)))
-    for i, nm in enumerate(active_names):
-        customers.append(Customer(shop_id=shop.id, name=nm, phone=_phone(300 + i),
-                                  last_visit=today - timedelta(days=rng.randint(0, 9)),
+        for i, nm in enumerate(active_names):
+            cust_rows.append(dict(shop_id=shop.id, name=nm, phone=_phone(300 + i), last_visit=today - timedelta(days=rng.randint(0, 9)),
                                   visits=rng.randint(10, 60), lifetime_spend=rng.randint(5000, 25000)))
-    db.add_all(customers)
-    db.flush()
+        for r in cust_rows:
+            r["last_reminded_at"] = None
+        _bulk(db, Customer, cust_rows)
+        cust_id = dict(db.execute(select(Customer.name, Customer.id).where(Customer.shop_id == shop.id)).all())
 
-    notes = ["atta, dal", "ghee 1kg", "ration", "chai patti, sugar", "tel, masale", "bachon ke biscuit", "monthly saaman", "dry fruits"]
-    for cust, bal in zip(customers[:41], balances):
-        parts = rng.choice([1, 2, 2, 3])
-        cuts = sorted(rng.sample(range(1, 10), parts - 1)) if parts > 1 else []
-        pieces, prev = [], 0
-        for c in cuts + [10]:
-            pieces.append(int(round(bal * (c - prev) / 10.0 / 10.0)) * 10)
-            prev = c
-        pieces[-1] += bal - sum(pieces)
-        for amt in pieces:
-            if amt <= 0:
-                continue
-            db.add(UdhaarEntry(shop_id=shop.id, customer_id=cust.id, amount=amt, kind="credit", note=rng.choice(notes),
-                               source="manual", created_at=datetime.combine(today - timedelta(days=rng.randint(3, 55)), datetime.min.time())))
+        notes = ["atta, dal", "ghee 1kg", "ration", "chai patti, sugar", "tel, masale", "bachon ke biscuit", "monthly saaman", "dry fruits"]
+        entries = []
+        for nm, bal in zip(udhaar_names, balances):
+            parts = rng.choice([1, 2, 2, 3])
+            cuts = sorted(rng.sample(range(1, 10), parts - 1)) if parts > 1 else []
+            pieces, prev = [], 0
+            for c in cuts + [10]:
+                pieces.append(int(round(bal * (c - prev) / 10.0 / 10.0)) * 10)
+                prev = c
+            pieces[-1] += bal - sum(pieces)
+            for amt in pieces:
+                if amt > 0:
+                    entries.append(dict(shop_id=shop.id, customer_id=cust_id[nm], amount=amt, kind="credit", note=rng.choice(notes), source="manual",
+                                        simulated=False, created_at=datetime.combine(today - timedelta(days=rng.randint(3, 55)), datetime.min.time())))
+        _bulk(db, UdhaarEntry, entries)
 
-    db.add(AuditLog(shop_id=shop.id, actor="system", event="demo_data_loaded", detail={"udhaar_total": 38000, "customers": len(customers)}))
-    db.commit()
-    return {"customers": len(customers), "products": len(PRODUCTS), "udhaar_total": 38000}
+        db.add(AuditLog(shop_id=shop.id, actor="system", event="demo_data_loaded", detail={"udhaar_total": 38000, "customers": len(cust_rows)}))
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return {"customers": len(cust_rows), "products": len(PRODUCTS), "udhaar_total": 38000}
 
 
 def ensure_user(db: Session, email: str, password: str, name: str, role: str) -> User:
@@ -194,5 +208,10 @@ def ensure_user(db: Session, email: str, password: str, name: str, role: str) ->
 
 def bootstrap(db: Session) -> None:
     s = get_settings()
-    ensure_user(db, s.admin_email.lower(), s.admin_password, "Admin", "admin")
+    admin = ensure_user(db, s.admin_email.lower(), s.admin_password, "Admin", "admin")
+    # ADMIN_PASSWORD is the source of truth: rotating it in the environment rotates the stored hash on next start.
+    if admin.role != "admin" or not verify_password(s.admin_password, admin.password_hash):
+        admin.role = "admin"
+        admin.password_hash = hash_password(s.admin_password)
+        db.commit()
     ensure_user(db, s.demo_email.lower(), s.demo_password, "Raj", "merchant")

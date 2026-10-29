@@ -197,3 +197,18 @@ def test_pay_page_and_cron(client, merchant):
     ok = client.get("/api/cron/evening-brief", headers={"Authorization": "Bearer cronsecret"})
     assert ok.status_code == 200 and ok.json()["briefs"] >= 1
     assert client.get("/api/dashboard", headers=merchant).json()["brief"]["text"].startswith("Raj ji, aaj ka hisaab")
+
+
+def test_admin_password_follows_environment(client, monkeypatch):
+    """Rotating ADMIN_PASSWORD in the environment must replace a previously stored (e.g. weak dev) password."""
+    from app import seed
+    from app.config import get_settings
+    from app.db import SessionLocal
+    monkeypatch.setattr(get_settings(), "admin_password", "rotated-secret-99")
+    with SessionLocal() as db:
+        seed.bootstrap(db)
+    assert client.post("/api/auth/login", json={"email": "admin@munshi.app", "password": "rotated-secret-99"}).status_code == 200
+    assert client.post("/api/auth/login", json={"email": "admin@munshi.app", "password": "admin12345"}).status_code == 401
+    monkeypatch.setattr(get_settings(), "admin_password", "admin12345")
+    with SessionLocal() as db:
+        seed.bootstrap(db)
