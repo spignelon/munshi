@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/dm-sans";
+
+@theme {
+  --font-sans: "DM Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+
+  --color-navy-950: #0b1226;
+  --color-navy-900: #111b33;
+  --color-navy-800: #17254a;
+  --color-navy-700: #1f315f;
+  --color-navy-600: #34456f;
+  --color-saffron-500: #e8912d;
+  --color-saffron-400: #f0a64e;
+  --color-saffron-600: #c97712;
+  --color-saffron-700: #a35a0d;
+  --color-cream-50: #fffdf8;
+  --color-cream-100: #f8f4ec;
+  --color-cream-200: #f0e8d8;
+  --color-cream-300: #e6dbc4;
+  --color-ink-500: #5b6475;
+  --color-ink-400: #8a92a3;
+  --color-good: #1f8a5b;
+  --color-bad: #c0392b;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--color-cream-100); color: var(--color-navy-900); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, .font-display { font-family: var(--font-display); font-optical-sizing: auto; letter-spacing: -0.01em; }
+:focus-visible { outline: 2px solid var(--color-saffron-500); outline-offset: 2px; }
+::selection { background: #e8912d55; }
+
+@keyframes pulse-ring { 0% { transform: scale(1); opacity: .55 } 100% { transform: scale(1.9); opacity: 0 } }
+.pulse-ring::before, .pulse-ring::after { content: ""; position: absolute; inset: 0; border-radius: 9999px; background: var(--color-bad); animation: pulse-ring 1.4s ease-out infinite; z-index: -1; }
+.pulse-ring::after { animation-delay: .7s; }
+@keyframes bounce-dot { 0%, 80%, 100% { transform: translateY(0); opacity: .4 } 40% { transform: translateY(-4px); opacity: 1 } }
+.dot { animation: bounce-dot 1.2s infinite; }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

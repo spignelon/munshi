@@ -10,6 +10,7 @@ from ..config import get_settings
 from ..db import get_db
 from ..models import Brief, Plan, Product, Shop, User
 from ..serializers import plan_out, shop_out, user_out
+from ..services import brief as brief_service
 from ..services import business, groq_client, settings_store
 
 router = APIRouter(prefix="/api")
@@ -140,3 +141,9 @@ def dashboard(shop: Shop = Depends(current_shop), db: Session = Depends(get_db))
         "loan": business.loan_offer(db, shop),
         "groq": {"configured": bool(get_settings().groq_api_key or get_settings().groq_fake)},
     }
+
+
+@router.post("/brief")
+def make_brief(shop: Shop = Depends(current_shop), db: Session = Depends(get_db)):
+    b = brief_service.build(db, shop, send=False)
+    return {"text": b.text, "day": b.day.isoformat(), "stats": b.stats}
