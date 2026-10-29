@@ -15,7 +15,7 @@ def audit(db: Session, shop: Shop, event: str, ref: str = "", actor: str = "muns
 
 
 def decide(db: Session, shop: Shop, plan: Plan, *, approve: bool, action_ids: list[int] | None = None,
-           channel: str = "web", utterance: str = "", actor: str = "raj") -> Plan:
+           channel: str = "web", utterance: str = "", actor: str = "owner") -> Plan:
     if plan.status != "proposed":
         raise ValueError(f"Plan already {plan.status}")
     pending = [a for a in plan.actions if a.status in ("proposed", "blocked")]
@@ -174,11 +174,11 @@ def _finish_messaging(a: Action, sent: int, failed: int, first_error: str) -> No
 # -- loan offer & ledger import ---------------------------------------------------------------------
 def _loan_offer(db: Session, shop: Shop, a: Action, mock: bool) -> None:
     p = a.payload
-    text = (f"Raj ji, aapki Paytm sales ke basis par {business.inr(p['amount'])} ka working-capital loan pre-approved hai "
+    text = (f"Aapki Paytm sales ke basis par {business.inr(p['amount'])} ka working-capital loan pre-approved hai "
             f"({p['tenure_months']} mahine). [Simulated offer — demo only]")
     sent = False
     if shop.whatsapp_number:
-        m = messaging.send_whatsapp(db, shop, to=shop.whatsapp_number, body=text, recipient_name="Raj (owner)", action_id=a.id, direct=True)
+        m = messaging.send_whatsapp(db, shop, to=shop.whatsapp_number, body=text, recipient_name="Owner", action_id=a.id, direct=True)
         sent = m.status == "sent"
     a.result = {"offer_amount": p["amount"], "tenure_months": p["tenure_months"], "whatsapp_sent": sent, "note": p["note"]}
     a.status = "done"

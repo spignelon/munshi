@@ -1,4 +1,4 @@
-"""Demo data: 'Raj's kirana, Lajpat Nagar', calibrated to the pitch story.
+"""Sample data for a realistic demo kirana store: 90 days of Paytm sales, udhaar ledger, stock, suppliers, lapsed regulars.
 
 All dates are relative to today so the demo works any day. Phone numbers are
 deliberately invalid (+9100000000NN) so nothing real can ever be contacted; in
@@ -18,7 +18,7 @@ from .models import (Action, AuditLog, Approval, Brief, CallSession, Customer, D
                      PayLink, Plan, Product, Shop, Supplier, UdhaarEntry, User)
 
 SUPPLIERS = [
-    ("Sharma Distributors", "ghee, dry fruits, oil, besan"),
+    ("Shree Foods Distributors", "ghee, dry fruits, oil, besan"),
     ("Gupta Wholesale", "atta, rice, dal, sugar"),
     ("Jain Traders", "namkeen, biscuits, sweets"),
     ("Verma Beverages", "cold drinks, tea, coffee"),
@@ -26,7 +26,7 @@ SUPPLIERS = [
 ]
 
 # name, category, unit, supplier idx, stock, reorder, cost, price, avg/day, last-festival units (10-day window)
-# The first 12 are the "sold 3x last Diwali and running low" festive items (Sharma Distributors).
+# The first 12 are festive-season items (sold ~3x normal last festival, now low) from the main supplier.
 PRODUCTS = [
     ("Desi Ghee 1kg", "Ghee & Oil", "tin", 0, 14, 20, 560, 640, 4, 130),
     ("Desi Ghee 500g", "Ghee & Oil", "pack", 0, 12, 18, 290, 330, 3, 90),
@@ -118,9 +118,9 @@ def seed_demo(db: Session, shop: Shop) -> dict:
     try:
         wipe_shop_data(db, shop.id, commit=False)
 
-        shop.name = "Raj Kirana Store"
-        shop.locality = "Lajpat Nagar, Delhi"
-        shop.upi_vpa = shop.upi_vpa or "rajkirana@paytm"
+        shop.name = "Kumar General Store"
+        shop.locality = "New Delhi"
+        shop.upi_vpa = shop.upi_vpa or "kumarstore@paytm"
         shop.daily_spend_cap = 75000
         shop.per_order_cap = 50000
         shop.onboarded = True
@@ -201,7 +201,7 @@ def ensure_user(db: Session, email: str, password: str, name: str, role: str) ->
     user = User(email=email, name=name, password_hash=hash_password(password), role=role)
     db.add(user)
     db.flush()
-    db.add(Shop(owner_id=user.id, name=f"{name} Kirana" if role != "merchant" else "Raj Kirana Store"))
+    db.add(Shop(owner_id=user.id, name=f"{name} Store" if role != "merchant" else "Kumar General Store"))
     db.commit()
     return user
 
@@ -214,4 +214,8 @@ def bootstrap(db: Session) -> None:
         admin.role = "admin"
         admin.password_hash = hash_password(s.admin_password)
         db.commit()
-    ensure_user(db, s.demo_email.lower(), s.demo_password, "Raj", "merchant")
+    legacy = db.query(User).filter(User.email == "raj@munshi.demo").first()
+    if legacy and not db.query(User).filter(User.email == s.demo_email.lower()).first():
+        legacy.email, legacy.name = s.demo_email.lower(), "Ramesh Kumar"  # migrate the pre-rename demo account in place
+        db.commit()
+    ensure_user(db, s.demo_email.lower(), s.demo_password, "Ramesh Kumar", "merchant")

@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { DIWALI, demoLogin, sendToMunshi } from "./helpers";
+import { FULL_PLAN, demoLogin, sendToMunshi } from "./helpers";
 
 test.describe("Munshi journey (the pitch's demo flow)", () => {
   test.beforeEach(async ({ page }) => { await demoLogin(page); });
 
-  test("one sentence → plan → nothing moves until Raj approves → approve → results + audit trail", async ({ page }) => {
-    await sendToMunshi(page, DIWALI);
+  test("one sentence → plan → nothing moves until the owner approves → approve → results + audit trail", async ({ page }) => {
+    await sendToMunshi(page, FULL_PLAN);
     const card = page.getByTestId("plan-card").first();
     await expect(card).toBeVisible();
-    await expect(card).toContainText("Sharma Distributors ko phone karke order");
+    await expect(card).toContainText("Shree Foods Distributors ko phone karke order");
     await expect(card).toContainText("41 udhaar customers");
     await expect(card).toContainText("Approval chahiye");
 
@@ -25,7 +25,7 @@ test.describe("Munshi journey (the pitch's demo flow)", () => {
 
     // call transcript expands
     await page.getByRole("button", { name: /Call transcript/ }).first().click();
-    await expect(page.getByText("Namaste Sharma ji").first()).toBeVisible();
+    await expect(page.getByText(/Munshi bol raha hoon/).first()).toBeVisible();
 
     // udhaar went down (simulated payments)
     await page.goto("/app/udhaar");
@@ -48,12 +48,12 @@ test.describe("Munshi journey (the pitch's demo flow)", () => {
     await expect(page.getByTestId("udhaar-total")).toHaveText("₹38,000");
   });
 
-  test("spending cap blocks an oversized order, even if Raj says yes", async ({ page }) => {
+  test("spending cap blocks an oversized order, even if the owner says yes", async ({ page }) => {
     await page.goto("/app/settings");
     await page.getByLabel("Max per order (₹)").fill("10000");
     await page.getByRole("button", { name: "Save karein" }).click();
     await expect(page.getByText("Settings save ho gayi")).toBeVisible();
-    await sendToMunshi(page, "Sharma ji ko order do");
+    await sendToMunshi(page, "supplier ko order do");
     await expect(page.getByText(/per-order limit/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Haan, karo" })).toHaveCount(0);
   });
@@ -73,6 +73,6 @@ test.describe("Munshi journey (the pitch's demo flow)", () => {
     await page.waitForTimeout(4500); // let the fake device play the clip
     await page.getByRole("button", { name: /Recording rokein/ }).click();
     await expect(page.getByTestId("plan-card").first()).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("Diwali aa rahi hai").first()).toBeVisible();
+    await expect(page.getByText("Stock check karo").first()).toBeVisible();
   });
 });

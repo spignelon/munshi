@@ -46,7 +46,7 @@ export default function Inventory() {
           <div className="flex flex-wrap items-center justify-between gap-3 bg-saffron-500/10 px-5 py-4">
             <div><Eyebrow>{fc.festival.name} forecast · {fc.festival.days_away} din baaki</Eyebrow>
               <p className="mt-1 font-display text-xl font-semibold">{gap} items pichhle {fc.festival.name} jaisi demand ke liye kam hain</p></div>
-            <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent("Stock check karo aur Sharma ji ko order do")}&send=1`)}><Sparkles className="size-4" aria-hidden />Munshi se order karwayein</Button>
+            <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent("Stock check karo aur supplier ko order do")}&send=1`)}><Sparkles className="size-4" aria-hidden />Munshi se order karwayein</Button>
           </div>
           <div className="divide-y divide-cream-200">
             {fc.groups.map((g) => (

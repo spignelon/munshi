@@ -104,7 +104,7 @@ class UdhaarEntry(Base):
 
 
 class Message(Base):
-    """Conversation turns between Raj and Munshi across channels."""
+    """Conversation turns between the owner and Munshi across channels."""
     __tablename__ = "messages"
     id: Mapped[int] = mapped_column(primary_key=True)
     shop_id: Mapped[int] = mapped_column(ForeignKey("shops.id"), index=True)
@@ -149,7 +149,7 @@ class Action(Base):
 
 
 class Approval(Base):
-    """The audit anchor: the moment Raj said 'haan'."""
+    """The audit anchor: the moment the owner approved (or rejected) a plan."""
     __tablename__ = "approvals"
     id: Mapped[int] = mapped_column(primary_key=True)
     plan_id: Mapped[int] = mapped_column(ForeignKey("plans.id"), index=True)
@@ -173,7 +173,7 @@ class CallSession(Base):
     twilio_sid: Mapped[str] = mapped_column(String(60), default="", index=True)
     status: Mapped[str] = mapped_column(String(20), default="queued")  # queued|in_progress|completed|failed
     simulated: Mapped[bool] = mapped_column(Boolean, default=False)
-    transcript: Mapped[list] = mapped_column(JSON, default=list)  # [{speaker: munshi|supplier|raj, text}]
+    transcript: Mapped[list] = mapped_column(JSON, default=list)  # [{speaker: munshi|supplier, text}]
     outcome: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 

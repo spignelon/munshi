@@ -1,4 +1,4 @@
-"""Notebook-photo -> draft udhaar rows via qwen vision. Nothing is saved until Raj reviews and imports."""
+"""Notebook-photo -> draft udhaar rows via qwen vision. Nothing is saved until the owner reviews and imports."""
 import difflib
 
 from sqlalchemy.orm import Session

@@ -3,6 +3,7 @@ import { BookOpen, History, LayoutDashboard, LogOut, Menu, Mic, Package, Setting
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { InstallButton } from "./InstallButton";
 import { Logo } from "./Logo";
 import { Modal } from "./ui";
 
@@ -38,7 +39,8 @@ export function Shell() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-4 rounded-2xl bg-navy-800 p-3.5">
+        <InstallButton variant="onDark" className="mb-3 w-full" />
+        <div className="rounded-2xl bg-navy-800 p-3.5">
           <p className="truncate text-sm font-semibold text-cream-50">{session?.shop.name}</p>
           <p className="truncate text-xs text-cream-200/60">{session?.user.email}</p>
           <button onClick={out} className="mt-3 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-cream-200/80 hover:bg-navy-700 hover:text-cream-50">
@@ -64,7 +66,7 @@ export function Shell() {
       </div>
 
       {/* Mobile bottom tabs */}
-      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cream-300 bg-cream-50/95 backdrop-blur lg:hidden" aria-label="Primary">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-[calc(4rem+env(safe-area-inset-bottom))] grid-cols-5 items-start border-t pb-[env(safe-area-inset-bottom)] border-cream-300 bg-cream-50/95 backdrop-blur lg:hidden" aria-label="Primary">
         {nav.filter((n) => tabs.includes(n.to)).map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end}
             className={({ isActive }) => clsx("flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold", isActive ? "text-saffron-700" : "text-ink-500")}>
@@ -79,6 +81,7 @@ export function Shell() {
       </nav>
       <Modal open={more} onClose={() => setMore(false)} title="More">
         <div className="grid gap-1">
+          <InstallButton className="mb-2 w-full" />
           {items.filter((n) => !tabs.includes(n.to)).map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} onClick={() => setMore(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 font-medium hover:bg-cream-200">
               <Icon className="size-5 text-saffron-700" aria-hidden /> {label}

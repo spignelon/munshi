@@ -22,7 +22,7 @@ def order_brief(action: Action, short: bool = False) -> str:
 def opening_line(shop: Shop, action: Action) -> str:
     p = action.payload
     return (f"Namaste {p['supplier_name']}. Main {shop.name} ki taraf se Munshi bol raha hoon. "
-            f"Diwali ke liye order dena hai: {order_brief(action, short=True)}. "
+            f"Order dena hai: {order_brief(action, short=True)}. "
             f"Kya aap abhi order le sakte hain, aur kuch chhoot mil sakti hai?")
 
 
@@ -39,7 +39,7 @@ def simulate_call(db: Session, shop: Shop, action: Action) -> CallSession:
     p = action.payload
     prompt = (
         f"Write a realistic phone call in Hinglish (Roman script) between Munshi (AI assistant of '{shop.name}') and {p['supplier_name']} "
-        f"(wholesale supplier). Munshi orders for Diwali: {order_brief(action)}; order value about {business.inr(p['total'])}. "
+        f"(wholesale supplier). Munshi places an order: {order_brief(action)}; order value about {business.inr(p['total'])}. "
         f"Munshi politely asks for about {p['discount_ask_pct']:.0f}% discount; the supplier haggles a little and agrees to a discount between 2 and 5 percent "
         "and promises delivery (give a concrete ETA like 'kal subah 11 baje'). 5-7 short turns, speakers 'munshi' and 'supplier'. "
         'Return ONLY JSON: {"transcript":[{"speaker":"munshi"|"supplier","text":str}],"discount_pct":number,"eta":str,"confirmed":true}')

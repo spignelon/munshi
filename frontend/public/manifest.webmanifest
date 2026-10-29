@@ -1,0 +1,27 @@
+{
+  "id": "/app",
+  "name": "Munshi — AI back office for kirana merchants",
+  "short_name": "Munshi",
+  "description": "Voice-first AI assistant that reorders stock, collects udhaar and wins customers back, with your approval at every step.",
+  "start_url": "/app?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111B33",
+  "theme_color": "#111B33",
+  "lang": "en-IN",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ask Munshi", "short_name": "Munshi", "url": "/app/munshi?source=shortcut", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Udhaar ledger", "short_name": "Udhaar", "url": "/app/udhaar?source=shortcut", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/mobile.png", "sizes": "720x1280", "type": "image/png", "form_factor": "narrow", "label": "Dashboard" },
+    { "src": "/screenshots/desktop.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Munshi plan with approvals" }
+  ]
+}

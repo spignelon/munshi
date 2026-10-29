@@ -1,6 +1,6 @@
 import pytest
 
-from .conftest import DIWALI
+from .conftest import FULL_PLAN
 
 
 def cmd(client, h, text):
@@ -33,18 +33,18 @@ def test_demo_numbers_match_pitch(client, merchant):
 def test_tenant_isolation(client, merchant):
     other = client.post("/api/auth/signup", json={"name": "Other", "email": "other@test.dev", "password": "password123"}).json()
     oh = {"Authorization": f"Bearer {other['token']}"}
-    plan = cmd(client, merchant, DIWALI)["plan"]
+    plan = cmd(client, merchant, FULL_PLAN)["plan"]
     assert client.get(f"/api/plans/{plan['id']}", headers=oh).status_code == 404
     assert client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True}, headers=oh).status_code == 404
     assert client.get("/api/udhaar", headers=oh).json()["total"] == 0
 
 
-def test_diwali_command_proposes_but_moves_nothing(client, merchant):
-    out = cmd(client, merchant, DIWALI)
+def test_full_plan_proposes_but_moves_nothing(client, merchant):
+    out = cmd(client, merchant, FULL_PLAN)
     types = {a["type"]: a for a in out["plan"]["actions"]}
     assert {"supplier_order", "udhaar_reminders", "winback_offer"} <= set(types)
     assert types["supplier_order"]["status"] == "proposed" and 40000 < types["supplier_order"]["amount"] < 50000
-    assert types["supplier_order"]["payload"]["supplier_name"] == "Sharma Distributors"
+    assert types["supplier_order"]["payload"]["supplier_name"] == "Shree Foods Distributors"
     assert types["udhaar_reminders"]["payload"]["customer_count"] == 41
     assert out["plan"]["status"] == "proposed"
     assert client.get("/api/udhaar", headers=merchant).json()["total"] == 38000  # nothing executed yet
@@ -52,7 +52,7 @@ def test_diwali_command_proposes_but_moves_nothing(client, merchant):
 
 
 def test_approval_executes_in_mock_mode_with_audit_chain(client, merchant):
-    plan = cmd(client, merchant, DIWALI)["plan"]
+    plan = cmd(client, merchant, FULL_PLAN)["plan"]
     r = client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True, "utterance": "haan karo"}, headers=merchant)
     assert r.status_code == 200, r.text
     p = r.json()["plan"]
@@ -79,12 +79,12 @@ def test_approval_executes_in_mock_mode_with_audit_chain(client, merchant):
 
 
 def test_partial_approval_and_reject(client, merchant):
-    plan = cmd(client, merchant, DIWALI)["plan"]
+    plan = cmd(client, merchant, FULL_PLAN)["plan"]
     ids = {a["type"]: a["id"] for a in plan["actions"]}
     r = client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True, "action_ids": [ids["winback_offer"]]}, headers=merchant).json()["plan"]
     st = {a["type"]: a["status"] for a in r["actions"]}
     assert st["winback_offer"] == "done" and st["supplier_order"] == "rejected" and st["udhaar_reminders"] == "rejected"
-    plan2 = cmd(client, merchant, DIWALI)["plan"]
+    plan2 = cmd(client, merchant, FULL_PLAN)["plan"]
     r2 = client.post(f"/api/plans/{plan2['id']}/decision", json={"approve": False}, headers=merchant).json()["plan"]
     assert r2["status"] == "rejected" and all(a["status"] == "rejected" for a in r2["actions"])
     assert client.get("/api/udhaar", headers=merchant).json()["total"] == 38000
@@ -92,33 +92,33 @@ def test_partial_approval_and_reject(client, merchant):
 
 def test_spending_caps_block_orders(client, merchant):
     client.put("/api/shop", json={"per_order_cap": 10000}, headers=merchant)
-    out = cmd(client, merchant, "Sharma ji ko stock order do")
+    out = cmd(client, merchant, "supplier ko stock order do")
     so = next(a for a in out["plan"]["actions"] if a["type"] == "supplier_order")
     assert so["status"] == "blocked" and "per-order limit" in so["blocked_reason"]
     assert out["plan"]["status"] == "blocked"
     assert client.post(f"/api/plans/{out['plan']['id']}/decision", json={"approve": True}, headers=merchant).status_code == 409
     # daily cap: allow per-order but cap the day below one order
     client.put("/api/shop", json={"per_order_cap": 50000, "daily_spend_cap": 20000}, headers=merchant)
-    so2 = next(a for a in cmd(client, merchant, "Sharma ji ko order do")["plan"]["actions"] if a["type"] == "supplier_order")
+    so2 = next(a for a in cmd(client, merchant, "supplier ko order do")["plan"]["actions"] if a["type"] == "supplier_order")
     assert so2["status"] == "blocked" and "daily limit" in so2["blocked_reason"]
 
 
 def test_daily_cap_counts_earlier_orders(client, merchant):
     client.put("/api/shop", json={"daily_spend_cap": 60000}, headers=merchant)
-    first = cmd(client, merchant, "Sharma ji ko order do")["plan"]
+    first = cmd(client, merchant, "supplier ko order do")["plan"]
     client.post(f"/api/plans/{first['id']}/decision", json={"approve": True}, headers=merchant)
-    second = next(a for a in cmd(client, merchant, "Sharma ji ko order do")["plan"]["actions"] if a["type"] == "supplier_order")
+    second = next(a for a in cmd(client, merchant, "supplier ko order do")["plan"]["actions"] if a["type"] == "supplier_order")
     assert second["status"] == "blocked" and "daily limit" in second["blocked_reason"]
 
 
 def test_haan_nahi_by_text(client, merchant):
-    cmd(client, merchant, DIWALI)
+    cmd(client, merchant, FULL_PLAN)
     out = cmd(client, merchant, "haan")
     assert out["decision"] == "approved" and "order pakka" in out["reply"]
     cmd(client, merchant, "loan chahiye")  # (udhaar reminders are on a 48h cooldown after the approval above)
     assert cmd(client, merchant, "nahi")["decision"] == "rejected"
     # a lookalike sentence is NOT an approval
-    cmd(client, merchant, "Sharma ji ko order do")
+    cmd(client, merchant, "supplier ko order do")
     out = cmd(client, merchant, "stock check karo")
     assert out["decision"] is None
 
@@ -131,7 +131,7 @@ def test_question_has_no_actions(client, merchant):
 def test_real_mode_without_credentials_fails_loudly(client, merchant, admin):
     client.put("/api/admin/settings", json={"values": {"mock_mode": False}}, headers=admin)
     try:
-        plan = cmd(client, merchant, DIWALI)["plan"]
+        plan = cmd(client, merchant, FULL_PLAN)["plan"]
         r = client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True}, headers=merchant).json()["plan"]
         so = next(a for a in r["actions"] if a["type"] == "supplier_order")
         assert so["status"] == "failed" and "Twilio is not configured" in so["result"]["error"]
@@ -165,7 +165,7 @@ def test_ocr_scan_then_import(client, merchant):
 
 def test_voice_command_uses_whisper(client, merchant):
     r = client.post("/api/agent/command", files={"audio": ("a.webm", b"x" * 2000, "audio/webm")}, headers=merchant)
-    assert r.status_code == 200 and r.json()["voice"] is True and "Sharma" in r.json()["transcript"]
+    assert r.status_code == 200 and r.json()["voice"] is True and "supplier" in r.json()["transcript"]
     assert client.post("/api/agent/command", files={"audio": ("a.webm", b"x", "audio/webm")}, headers=merchant).status_code == 422
 
 
@@ -181,7 +181,7 @@ def test_admin_settings_mask_secrets_and_toggle(client, admin):
 
 def test_tts_endpoints(client, merchant):
     from app.services import tts
-    r = client.post("/api/tts/speak", json={"text": "Namaste Raj ji"}, headers=merchant)
+    r = client.post("/api/tts/speak", json={"text": "Namaste ji"}, headers=merchant)
     assert r.status_code == 200 and r.headers["content-type"] == "audio/mpeg" and r.headers["x-tts-provider"] == "edge"
     assert client.get("/api/tts/play", params={"text": "hi", "sig": "bad"}).status_code == 403
     assert client.get("/api/tts/play", params={"text": "hi", "sig": tts.sign("hi")}).status_code == 200
@@ -192,11 +192,11 @@ def test_pay_page_and_cron(client, merchant):
     r = client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True}, headers=merchant).json()["plan"]
     link = next(m["body"] for m in r["messages"]).split("http://testserver")[1].split()[0]
     page = client.get(link)
-    assert page.status_code == 200 and "upi://pay?pa=rajkirana%40paytm" in page.text
+    assert page.status_code == 200 and "upi://pay?pa=kumarstore%40paytm" in page.text
     assert client.get("/api/cron/evening-brief").status_code == 403
     ok = client.get("/api/cron/evening-brief", headers={"Authorization": "Bearer cronsecret"})
     assert ok.status_code == 200 and ok.json()["briefs"] >= 1
-    assert client.get("/api/dashboard", headers=merchant).json()["brief"]["text"].startswith("Raj ji, aaj ka hisaab")
+    assert client.get("/api/dashboard", headers=merchant).json()["brief"]["text"].startswith("Aaj ka hisaab")
 
 
 def test_admin_password_follows_environment(client, monkeypatch):

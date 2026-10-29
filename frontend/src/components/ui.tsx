@@ -21,7 +21,7 @@ export function Button({ variant = "primary", size = "md", loading, className, c
       disabled={disabled || loading}
       className={clsx(
         "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 select-none",
-        size === "sm" ? "px-3 py-1.5 text-sm" : size === "lg" ? "px-6 py-3.5 text-base" : "px-4 py-2.5 text-sm",
+        size === "sm" ? "min-h-9 px-3 py-1.5 text-sm" : size === "lg" ? "px-6 py-3.5 text-base" : "px-4 py-2.5 text-sm",
         variants[variant], className,
       )}
     >
@@ -81,7 +81,7 @@ export const ErrorNote = ({ error }: { error: unknown }) => (
   <div role="alert" className="rounded-xl border border-bad/25 bg-bad/8 px-4 py-3 text-sm text-bad">{error instanceof Error ? error.message : String(error)}</div>
 );
 
-const fieldCls = "w-full rounded-xl border border-cream-300 bg-white px-3.5 py-2.5 text-[15px] text-navy-900 placeholder:text-ink-400 transition focus:border-saffron-500 focus:outline-none focus:ring-2 focus:ring-saffron-500/25 disabled:bg-cream-100 disabled:text-ink-400";
+const fieldCls = "w-full rounded-xl border border-cream-300 bg-white px-3.5 py-2.5 text-base text-navy-900 placeholder:text-ink-400 transition focus:border-saffron-500 focus:outline-none focus:ring-2 focus:ring-saffron-500/25 disabled:bg-cream-100 disabled:text-ink-400";
 
 export function Field({ label, hint, children, className }: { label: string; hint?: string; children: (id: string) => ReactNode; className?: string }) {
   const id = useId();

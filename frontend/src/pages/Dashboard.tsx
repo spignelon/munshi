@@ -10,7 +10,7 @@ import { useAuth } from "../lib/auth";
 import { compact, firstName, inr, shortDay } from "../lib/format";
 import type { Dashboard as Dash, Plan } from "../lib/types";
 
-const DIWALI_PROMPT = "Diwali aa rahi hai. Stock check karo, Sharma ji ko order do, aur udhaar wapas lao.";
+const SAMPLE_PROMPT = "Stock check karo, main supplier ko order do, aur udhaar wapas lao.";
 
 export default function Dashboard() {
   const { session } = useAuth();
@@ -51,9 +51,9 @@ export default function Dashboard() {
       <Card className="relative overflow-hidden border-navy-900 bg-navy-900 p-5 text-cream-50 sm:p-7">
         <div className="pointer-events-none absolute -right-16 -bottom-20 size-64 rounded-full bg-saffron-500/20 blur-3xl" aria-hidden />
         <Eyebrow dark>Munshi se kahein</Eyebrow>
-        <p className="mt-2 max-w-3xl font-display text-xl leading-snug italic sm:text-2xl">“{DIWALI_PROMPT}”</p>
+        <p className="mt-2 max-w-3xl font-display text-xl leading-snug italic sm:text-2xl">“{SAMPLE_PROMPT}”</p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent(DIWALI_PROMPT)}&send=1`)}><Sparkles className="size-4" aria-hidden />Yeh bhej dein</Button>
+          <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent(SAMPLE_PROMPT)}&send=1`)}><Sparkles className="size-4" aria-hidden />Yeh bhej dein</Button>
           <Button variant="onDark" onClick={() => navigate("/app/munshi")}><Mic className="size-4" aria-hidden />Khud bolein</Button>
         </div>
       </Card>
@@ -120,7 +120,7 @@ export default function Dashboard() {
       {data.lapsed_count > 0 && (
         <Card className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
           <p className="flex items-center gap-2"><AlertTriangle className="size-5 text-saffron-600" aria-hidden /><span><b>{data.lapsed_count} regulars</b> ne 30+ din se dukaan nahi aaye.</span></p>
-          <Button size="sm" variant="soft" onClick={() => navigate(`/app/munshi?q=${encodeURIComponent("Purane customers ko wapas bulane ka Diwali offer bhejo")}&send=1`)}>Wapas bulayein</Button>
+          <Button size="sm" variant="soft" onClick={() => navigate(`/app/munshi?q=${encodeURIComponent("Purane customers ko wapas bulane ka offer bhejo")}&send=1`)}>Wapas bulayein</Button>
         </Card>
       )}
     </div>

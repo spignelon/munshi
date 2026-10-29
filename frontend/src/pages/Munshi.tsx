@@ -11,9 +11,9 @@ import { Recorder, speak, stopSpeaking } from "../lib/audio";
 import type { ChatMessage, CommandResult, Plan } from "../lib/types";
 
 const SUGGESTIONS = [
-  "Diwali aa rahi hai. Stock check karo, Sharma ji ko order do, aur udhaar wapas lao.",
+  "Stock check karo, main supplier ko order do, aur udhaar wapas lao.",
   "Aaj ki sales kaisi rahi?",
-  "Purane customers ko wapas bulane ka Diwali offer bhejo",
+  "Purane customers ko wapas bulane ka offer bhejo",
   "Mujhe stock ke liye loan chahiye",
 ];
 const VOICE_KEY = "munshi.voice";
@@ -137,7 +137,7 @@ export default function Munshi() {
         {items.length === 0 && !pending && (
           <Card className="grid place-items-center gap-3 px-6 py-12 text-center">
             <div className="grid size-16 place-items-center rounded-full bg-saffron-500/15 text-saffron-700"><Mic className="size-7" aria-hidden /></div>
-            <h2 className="text-2xl font-semibold">Raj speaks. Munshi gets it done.</h2>
+            <h2 className="text-2xl font-semibold">Bolkar kaam karwayein</h2>
             <p className="max-w-md text-ink-500">Mic dabayein aur Hinglish mein boliye, ya neeche likhiye. Munshi plan banayega, aur aapki “haan” ke baad hi kuch karega.</p>
           </Card>
         )}
@@ -169,7 +169,7 @@ export default function Munshi() {
         <div ref={endRef} />
       </div>
 
-      <div className="sticky bottom-[4.6rem] z-20 -mx-4 space-y-2.5 bg-gradient-to-t from-cream-100 from-75% to-transparent px-4 pt-6 pb-2 sm:-mx-6 sm:px-6 lg:bottom-0">
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 -mx-4 space-y-2.5 bg-gradient-to-t from-cream-100 from-75% to-transparent px-4 pt-6 pb-2 sm:-mx-6 sm:px-6 lg:bottom-0">
         <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {SUGGESTIONS.map((s) => (
             <button key={s} onClick={() => send(s)} disabled={command.isPending} className="shrink-0 rounded-full border border-cream-300 bg-cream-50 px-3.5 py-1.5 text-sm hover:bg-saffron-500/10 disabled:opacity-50">
@@ -182,7 +182,7 @@ export default function Munshi() {
             <p className="flex-1 px-3 text-[15px] font-medium text-bad" role="status">● Sun raha hoon… {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} — poora hone par ■ dabayein</p>
           ) : (
             <input value={text} onChange={(e) => setText(e.target.value)} aria-label="Munshi ko likhein" placeholder="Munshi ko bolein ya likhein…" autoComplete="off"
-              className="min-w-0 flex-1 bg-transparent px-3 py-2 text-[15px] placeholder:text-ink-400 focus:outline-none" />
+              className="min-w-0 flex-1 bg-transparent px-3 py-2 text-base placeholder:text-ink-400 focus:outline-none" />
           )}
           {!recording && text.trim() && (
             <button type="submit" disabled={command.isPending} aria-label="Send" className="grid size-11 shrink-0 place-items-center rounded-xl bg-navy-900 text-cream-50 hover:bg-navy-800 disabled:opacity-50">

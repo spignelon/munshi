@@ -8,7 +8,7 @@ test("scan a notebook photo → review → import", async ({ page }) => {
   await page.goto("/app/udhaar");
   await page.getByTestId("ledger-file").setInputFiles(path.resolve("e2e/fixtures/ledger.png"));
   await expect(page.getByTestId("scan-row")).toHaveCount(3, { timeout: 30_000 });
-  await page.getByLabel("Amount 1").fill("500"); // Raj corrects an OCR mistake before importing
+  await page.getByLabel("Amount 1").fill("500"); // the owner corrects an OCR mistake before importing
   await page.getByRole("button", { name: "Remove row 3" }).click();
   await page.getByRole("button", { name: "Ledger mein import karein" }).click();
   await expect(page.getByText("2 entries ledger mein jud gayi")).toBeVisible();
@@ -31,14 +31,14 @@ test("add a manual entry, settle it, and send a single reminder", async ({ page 
   await expect(page.getByTestId("udhaar-total")).toHaveText("₹38,000");
 });
 
-test("stock page shows the Diwali forecast and customers page filters lapsed regulars", async ({ page }) => {
+test("stock page shows the festival forecast and customers page filters lapsed regulars", async ({ page }) => {
   await page.goto("/app/stock");
-  await expect(page.getByText(/12 items pichhle Diwali/)).toBeVisible();
+  await expect(page.getByText(/12 items pichhle .* jaisi demand/)).toBeVisible();
   await page.getByRole("button", { name: "Tyohaar items" }).click();
   await expect(page.getByTestId("product-row").first()).toBeVisible();
   await page.goto("/app/customers");
   await page.getByRole("button", { name: "30+ din se nahi aaye" }).click();
   await expect(page.getByTestId("customer-row").first()).toContainText("din pehle");
   await page.goto("/app/suppliers");
-  await expect(page.getByText("Sharma Distributors")).toBeVisible();
+  await expect(page.getByText("Shree Foods Distributors")).toBeVisible();
 });

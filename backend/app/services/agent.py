@@ -2,9 +2,9 @@
 
 Free-tier budget (8K tokens/min on gpt-oss-120b) rules out multi-round tool loops, so the
 read side (sales, udhaar, stock, lapsed regulars) is pre-fetched into a compact snapshot by
-deterministic code, and the model makes a single call: understand Raj's Hinglish, reply in
+deterministic code, and the model makes a single call: understand the owner's Hinglish, reply in
 Hinglish, and choose which actions to propose. Quantities, rupee amounts and recipient lists
-are then computed by code, and guardrails vet them before Raj is asked.
+are then computed by code, and guardrails vet them before the owner is asked.
 """
 import re
 from datetime import datetime, timedelta
@@ -16,15 +16,15 @@ from . import business, groq_client, guardrails
 
 ACTION_TYPES = {"supplier_order", "udhaar_reminders", "winback_offer", "loan_offer", "stock_report"}
 
-SYSTEM = """You are Munshi, the AI business partner of a kirana shop owner (Raj). Speak Hinglish (Hindi in Roman script), warm and brief, like a trusted munshi.
-You can PROPOSE these actions; nothing happens until Raj approves:
+SYSTEM = """You are Munshi, an AI business assistant for a small shop owner in India (kirana / retail). Reply in the same language the owner used (Hinglish in Roman script by default, or Hindi/English): warm, brief and practical.
+You can PROPOSE these actions; nothing happens until the owner approves:
 - supplier_order: phone a supplier and order stock. fields: supplier (name), discount_ask_pct (number 0-8)
-- udhaar_reminders: WhatsApp reminders with a Paytm UPI link to customers who owe money. fields: tone ("polite"|"firm")
-- winback_offer: WhatsApp an offer to regulars who stopped coming. fields: offer (short offer text, e.g. "Diwali par 10% chhoot")
+- udhaar_reminders: WhatsApp reminders with a UPI pay link to customers who owe money. fields: tone ("polite"|"firm")
+- winback_offer: WhatsApp an offer to regulars who stopped visiting. fields: offer (short offer text, e.g. "10% chhoot is hafte")
 - loan_offer: present a working-capital loan pre-offer. no fields.
 - stock_report: summarise low stock (read-only). no fields.
-Rules: propose only what Raj asked for or clearly implied; for questions about sales/stock/udhaar answer from the shop data with NO actions; never invent numbers - use only the shop data; reply max 2 short sentences.
-Return ONLY JSON: {"reply": "<Hinglish reply>", "actions": [{"type": "...", ...fields}]}"""
+Rules: propose only what the owner asked for or clearly implied; for questions about sales/stock/udhaar answer from the shop data with NO actions; never invent numbers - use only the shop data; reply max 2 short sentences.
+Return ONLY JSON: {"reply": "<reply in the owner's language>", "actions": [{"type": "...", ...fields}]}"""
 
 YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "ji", "yes", "yeah", "ok", "okay", "theek", "thik", "hai", "karo", "kar", "do", "dijiye",
        "kijiye", "kardo", "karna", "approve", "approved", "confirm", "pakka", "sahi", "bilkul", "chalo", "done", "y", "👍"}
@@ -56,7 +56,7 @@ def latest_pending_plan(db: Session, shop: Shop) -> Plan | None:
 
 def _planner_messages(db: Session, shop: Shop, text: str) -> list:
     return [{"role": "system", "content": SYSTEM},
-            {"role": "user", "content": f"SHOP DATA:\n{business.snapshot(db, shop)}\n\nRAJ SAYS: {text}"}]
+            {"role": "user", "content": f"SHOP DATA:\n{business.snapshot(db, shop)}\n\nOWNER SAYS: {text}"}]
 
 
 def _winback_copy(shop: Shop, offer: str) -> str:
@@ -118,7 +118,7 @@ def build_actions(db: Session, shop: Shop, plan: Plan, proposals: list[dict]) ->
             out.append(Action(
                 plan_id=plan.id, shop_id=shop.id, type=t, amount=0,
                 title=f"{len(lapsed)} purane customers ko wapas bulane ka offer",
-                detail=copy.replace("{name}", "Aap"),
+                detail=copy.replace("{name}", "[naam]"),
                 payload={"offer": offer, "template": copy, "customers": [{"id": c.id, "name": c.name, "phone": c.phone} for c in lapsed]}))
 
         elif t == "loan_offer":
@@ -141,7 +141,7 @@ def build_actions(db: Session, shop: Shop, plan: Plan, proposals: list[dict]) ->
 def propose(db: Session, shop: Shop, text: str, channel: str = "web") -> tuple[Plan, str]:
     """Run the planner and persist a Plan with its proposed Actions."""
     data = groq_client.chat_json(_planner_messages(db, shop, text), purpose="plan", max_tokens=700)
-    reply = str(data.get("reply") or "Ji Raj ji.").strip()
+    reply = str(data.get("reply") or "Ji, theek hai.").strip()
     proposals = [a for a in (data.get("actions") or []) if isinstance(a, dict)]
 
     plan = Plan(shop_id=shop.id, utterance=text, channel=channel, summary=reply, status="proposed")

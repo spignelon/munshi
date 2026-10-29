@@ -39,7 +39,7 @@ def festival() -> dict:
     except ValueError:
         d = clock.today() + timedelta(days=14)
     days = (d - clock.today()).days
-    # keep the demo evergreen: after the festival passes, point at the next Diwali-sized window
+    # keep the demo evergreen: after the festival passes, point at the same festival next year
     if days < -3:
         d = d.replace(year=d.year + 1)
         days = (d - clock.today()).days

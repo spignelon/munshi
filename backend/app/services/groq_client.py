@@ -193,7 +193,7 @@ def transcribe(audio: bytes, filename: str = "audio.webm", language: str = "hi")
         lambda: client.audio.transcriptions.with_raw_response.create(
             file=(filename, audio), model=STT_MODEL, language=language, temperature=0,
             response_format="json",
-            prompt="Hinglish kirana: udhaar, stock, order, Sharma ji, Diwali, ghee, dry fruits, paise, wapas lao.",
+            prompt="Hinglish kirana shop: udhaar, stock, order, supplier, ghee, dry fruits, paise, wapas lao, reminder.",
         ),
     )
     return (resp.text or "").strip()

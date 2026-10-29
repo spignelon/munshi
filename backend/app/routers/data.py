@@ -70,7 +70,7 @@ def add_entry(body: EntryIn, shop: Shop = Depends(current_shop), db: Session = D
 
 @router.post("/udhaar/{customer_id}/remind")
 def remind_one(customer_id: int, shop: Shop = Depends(current_shop), db: Session = Depends(get_db)):
-    """Raj's own tap is the approval for a single reminder; it's logged like any other action."""
+    """The owner's own tap is the approval for a single reminder; it's logged like any other action."""
     c = _own_customer(db, shop, customer_id)
     bal = _balances(db, shop).get(c.id, 0)
     if bal <= 0:
@@ -82,7 +82,7 @@ def remind_one(customer_id: int, shop: Shop = Depends(current_shop), db: Session
     m = messaging.send_whatsapp(db, shop, to=c.phone, body=body, recipient_name=c.name, customer_id=c.id)
     if m.status == "sent":
         c.last_reminded_at = datetime.utcnow()
-    executor.audit(db, shop, "manual_reminder", ref=f"customer:{c.id}", actor="raj", status=m.status)
+    executor.audit(db, shop, "manual_reminder", ref=f"customer:{c.id}", actor="owner", status=m.status)
     db.commit()
     if m.status != "sent":
         raise HTTPException(502, m.error or "Message send nahi hua.")
@@ -108,7 +108,7 @@ class ImportIn(BaseModel):
 @router.post("/udhaar/import")
 def import_entries(body: ImportIn, shop: Shop = Depends(current_shop), db: Session = Depends(get_db)):
     n = executor.import_entries(db, shop, [e.model_dump() for e in body.entries], source="ocr")
-    executor.audit(db, shop, "ledger_imported", actor="raj", count=n)
+    executor.audit(db, shop, "ledger_imported", actor="owner", count=n)
     db.commit()
     return {"imported": n}
 

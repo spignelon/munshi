@@ -211,7 +211,7 @@ async def voice_inbound(request: Request, db: Session = Depends(get_db)):
         resp.say("Namaste. Yeh number kisi Munshi account se juda nahi hai. Dhanyavaad.", language="hi-IN")
         resp.hangup()
         return _xml(resp)
-    _play(resp, "Namaste Raj ji, main Munshi hoon. Bataiye, kya karna hai?")
+    _play(resp, "Namaste, main Munshi hoon. Bataiye, kya karna hai?")
     _record(resp, f"{get_settings().public_base_url.rstrip('/')}/api/webhooks/voice/inbound/turn?shop={shop.id}")
     return _xml(resp)
 

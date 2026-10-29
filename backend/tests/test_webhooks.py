@@ -1,4 +1,4 @@
-from .conftest import DIWALI
+from .conftest import FULL_PLAN
 
 
 def _shop_phone(client, h, phone="+919811122233"):
@@ -13,8 +13,8 @@ def test_whatsapp_unknown_sender(client):
 
 def test_whatsapp_command_then_haan(client, merchant):
     phone = _shop_phone(client, merchant)
-    r = client.post("/api/webhooks/whatsapp", data={"From": f"whatsapp:{phone}", "Body": DIWALI, "NumMedia": "0"})
-    assert "Sharma Distributors ko phone" in r.text and "haan" in r.text
+    r = client.post("/api/webhooks/whatsapp", data={"From": f"whatsapp:{phone}", "Body": FULL_PLAN, "NumMedia": "0"})
+    assert "Shree Foods Distributors ko phone" in r.text and "haan" in r.text
     r2 = client.post("/api/webhooks/whatsapp", data={"From": f"whatsapp:{phone}", "Body": "Haan karo", "NumMedia": "0"})
     assert "order pakka" in r2.text
     plans = client.get("/api/plans", headers=merchant).json()
@@ -25,12 +25,12 @@ def test_supplier_call_turn_loop(client, merchant):
     """Real-mode TwiML flow, exercised with the webhooks directly (signature check skipped in mock mode without a token)."""
     from app.db import SessionLocal
     from app.models import Action, CallSession, Shop
-    plan = client.post("/api/agent/command", data={"text": "Sharma ji ko order do"}, headers=merchant).json()["plan"]
+    plan = client.post("/api/agent/command", data={"text": "supplier ko order do"}, headers=merchant).json()["plan"]
     aid = next(a["id"] for a in plan["actions"] if a["type"] == "supplier_order")
     with SessionLocal() as db:
         act = db.get(Action, aid)
         act.status = "executing"
-        cs = CallSession(shop_id=act.shop_id, action_id=aid, counterpart="Sharma Distributors", status="queued", transcript=[])
+        cs = CallSession(shop_id=act.shop_id, action_id=aid, counterpart="Shree Foods Distributors", status="queued", transcript=[])
         db.add(cs)
         db.commit()
         cs_id = cs.id
@@ -47,7 +47,7 @@ def test_supplier_call_turn_loop(client, merchant):
 def test_call_status_failure_marks_action(client, merchant):
     from app.db import SessionLocal
     from app.models import Action, CallSession
-    plan = client.post("/api/agent/command", data={"text": "Sharma ji ko order do"}, headers=merchant).json()["plan"]
+    plan = client.post("/api/agent/command", data={"text": "supplier ko order do"}, headers=merchant).json()["plan"]
     aid = next(a["id"] for a in plan["actions"] if a["type"] == "supplier_order")
     with SessionLocal() as db:
         act = db.get(Action, aid)

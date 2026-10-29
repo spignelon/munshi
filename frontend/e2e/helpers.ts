@@ -1,18 +1,18 @@
 import { expect, type Page } from "@playwright/test";
 
-export const DIWALI = "Diwali aa rahi hai. Stock check karo, Sharma ji ko order do, aur udhaar wapas lao.";
+export const FULL_PLAN = "Stock check karo, supplier ko order do, udhaar wapas lao, aur purane customers ko offer bhejo.";
 
 /** Log in as the demo merchant and reset the demo shop to its pristine seeded state. */
 export async function demoLogin(page: Page, reset = true) {
   await page.goto("/login");
-  await page.getByRole("button", { name: "Try demo as Raj" }).click();
-  await expect(page.getByRole("heading", { name: /Namaste, Raj ji/ })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Try the demo" }).click();
+  await expect(page.getByRole("heading", { name: /Namaste, Ramesh ji/ })).toBeVisible({ timeout: 30_000 });
   if (reset) {
     await page.evaluate(async () => {
       await fetch("/api/shop/demo-data", { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("munshi.token")}` } });
     });
     await page.reload();
-    await expect(page.getByRole("heading", { name: /Namaste, Raj ji/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Namaste, Ramesh ji/ })).toBeVisible();
   }
 }
 

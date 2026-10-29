@@ -10,8 +10,8 @@ test("capture screens", async ({ page }, info) => {
   await page.screenshot({ path: `screenshots/${tag}-landing.png`, fullPage: true });
   await page.getByRole("link", { name: "Log in" }).first().click();
   await page.screenshot({ path: `screenshots/${tag}-login.png` });
-  await page.getByRole("button", { name: "Try demo as Raj" }).click();
-  await expect(page.getByRole("heading", { name: /Namaste, Raj ji/ })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Try the demo" }).click();
+  await expect(page.getByRole("heading", { name: /Namaste, Ramesh ji/ })).toBeVisible({ timeout: 30_000 });
   for (const [name, url] of pages) {
     await page.goto(url);
     await page.waitForLoadState("networkidle");

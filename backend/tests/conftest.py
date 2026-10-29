@@ -35,7 +35,7 @@ async def _fake_audio():
 def merchant(client):
     """A fresh merchant with their own demo-seeded shop (tests stay isolated)."""
     n = next(_counter)
-    r = client.post("/api/auth/signup", json={"name": f"Raj{n}", "email": f"raj{n}@test.dev", "password": "password123", "phone": "9876543210"})
+    r = client.post("/api/auth/signup", json={"name": f"Owner{n}", "email": f"raj{n}@test.dev", "password": "password123", "phone": "9876543210"})
     assert r.status_code == 200, r.text
     h = {"Authorization": f"Bearer {r.json()['token']}"}
     assert client.post("/api/shop/demo-data", headers=h).status_code == 200
@@ -49,4 +49,4 @@ def admin(client):
     return {"Authorization": f"Bearer {r.json()['token']}"}
 
 
-DIWALI = "Diwali aa rahi hai. Stock check karo, Sharma ji ko order do, aur udhaar wapas lao."
+FULL_PLAN = "Stock check karo, supplier ko order do, udhaar wapas lao, aur purane customers ko offer bhejo."

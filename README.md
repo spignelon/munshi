@@ -1,31 +1,32 @@
-# Munshi — *Raj speaks. Munshi gets it done.*
+# Munshi — AI back office for kirana merchants
 
-A voice-first AI business partner for Paytm kirana merchants, built from the **Team MalaAI · Munshi** pitch.
-Raj says one Hinglish sentence — *"Diwali aa rahi hai. Stock check karo, Sharma ji ko order do, aur udhaar wapas lao."* —
-and Munshi **listens → thinks → acts → checks with Raj**: it plans the work, phones the supplier, sends udhaar reminders with
-Paytm/UPI pay links, wins lapsed regulars back, and **does nothing that moves money until Raj says "haan"**, within hard spending caps.
+Munshi is a voice-first AI assistant for small shop owners (built for Paytm merchants). The owner gives one instruction — by voice, text, WhatsApp or phone — such as
+*"Stock check karo, supplier ko order do, aur udhaar wapas lao"*, and Munshi **listens → plans → asks for approval → acts**: it works out what is running low,
+phones the supplier, WhatsApps udhaar reminders with UPI pay links, invites back customers who stopped visiting, and logs everything.
+**Nothing that moves money runs without the owner's approval**, and hard spending caps are enforced on top.
 
 | | |
 |---|---|
-| **Live app** | https://munshi-web-navy.vercel.app (click **Try the live demo**) |
+| **Live app** | https://munshi-web-navy.vercel.app (click **Try the live demo**; installable as an app) |
 | **API** | https://munshi-api-indol.vercel.app (`/api/docs` for Swagger, `/api/health`) |
-| **Stack** | FastAPI · React + Vite + TypeScript + Tailwind v4 · SQLite / Turso (libSQL) · Groq · Twilio · edge-tts / ElevenLabs |
+| **Stack** | FastAPI · React + Vite + TypeScript + Tailwind v4 (PWA) · SQLite / Turso (libSQL) · Groq · Twilio · edge-tts / ElevenLabs |
 
 ---
 
-## What it does (mapped to the pitch)
+## Features
 
-| Pitch chapter | In the product |
+| Area | What it does |
 |---|---|
-| **Listens** — Hinglish voice, noisy-shop ready | Mic button (web), WhatsApp voice notes, inbound phone calls → Groq **`whisper-large-v3-turbo`** (Hindi hint + Hinglish prompt) |
-| **Thinks** — agent reads sales, udhaar, stock | Groq **`openai/gpt-oss-120b`** plans from a compact snapshot of Paytm sales, udhaar, festive stock, lapsed regulars, suppliers |
-| **Acts** — calls, WhatsApp, UPI links, orders | Supplier phone calls (Twilio Voice, turn-by-turn Whisper ↔ LLM ↔ TTS), WhatsApp reminders with pay links (Twilio WhatsApp sandbox), win-back offers, loan pre-offer, evening brief |
-| **Checks** — "no rupee moves until Raj says haan" | Plan cards with per-action approve/reject, `haan`/`nahi` by text, voice, or WhatsApp; per-order + daily spend caps enforced **again at execution**; every action links to the approval record; full audit log |
-| Udhaar notebook (red *lal copy*) | Ledger with manual entries, one-tap reminders, and **photo scan** of the handwritten notebook via Groq vision **`qwen/qwen3.8-27b`** → review/edit → import |
-| Diwali stock gap | Festive forecast: items that sold ≥2× last Diwali and are now short, grouped by supplier with order value |
-| Evening brief (10 pm) | Daily brief generated on demand or by Vercel Cron, sent on WhatsApp |
+| **Voice & text** | Mic button (web), WhatsApp voice notes and inbound phone calls → Groq **`whisper-large-v3-turbo`** (Hindi hint + shop vocabulary prompt). Replies are spoken back with edge-tts or ElevenLabs |
+| **Planning** | Groq **`openai/gpt-oss-120b`** reads a compact snapshot of Paytm sales, udhaar, stock, lapsed customers and suppliers, replies in the owner's language and proposes actions |
+| **Actions** | Supplier phone calls (Twilio Voice, per-turn Whisper ↔ LLM ↔ TTS), WhatsApp udhaar reminders with UPI/Paytm pay links, win-back offers, working-capital loan pre-offer, stock report, daily summary |
+| **Approvals & safety** | Plan cards with per-action approve/reject; `haan`/`yes`/`nahi` by text, voice or WhatsApp; per-order and daily spend caps re-checked at execution; reminder cooldown; every action links to its approval; audit log |
+| **Udhaar ledger** | Manual entries, one-tap reminders, and **photo scan** of a handwritten notebook via Groq vision **`qwen/qwen3.8-27b`** → review/edit → import |
+| **Stock forecast** | Flags items that sold ≥2× normal in last year's festival window and are now short, grouped by supplier with order value (festival name/date are configurable) |
+| **Admin console** | Mock-mode toggle, TTS provider (Edge / ElevenLabs), Twilio credentials, test redirect number, connection tests, Groq usage, DB status, users |
+| **PWA** | Installable on Chrome / Android / desktop, offline fallback, mobile-first UI |
 
-Seed data ("Raj Kirana Store, Lajpat Nagar") reproduces the pitch story: ₹38,000 udhaar across 41 customers, 60 silent regulars, 12 festive items short (≈₹45.6K order from Sharma Distributors, ~₹1.8K negotiated off), ₹50,000 loan pre-offer.
+The demo store ("Kumar General Store") is generated sample data: 90 days of Paytm sales, 41 udhaar customers (₹38,000), 60 lapsed customers, 40 products with 12 festival items running low, and 5 suppliers.
 
 ### Design decision: one planning call, not a tool loop
 Groq's free tier gives `gpt-oss-120b` only **8,000 tokens/min** (30 RPM, 1K req/day). A multi-round tool-calling loop would blow that budget, so
@@ -93,7 +94,7 @@ Open http://localhost:5173 → **Try the live demo**. Admin login: `ADMIN_EMAIL`
 | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Hosted SQLite. Used automatically on Vercel; locally only when `USE_TURSO=1` |
 | `DATABASE_URL` | Optional explicit SQLAlchemy URL override |
 | `PUBLIC_BASE_URL` | The API's public URL (used in Twilio callbacks, TTS URLs and pay links) |
-| `FESTIVAL_NAME`, `FESTIVAL_DATE` | Default `Diwali`, `2026-11-08` |
+| `FESTIVAL_NAME`, `FESTIVAL_DATE` | Upcoming festival used by the stock forecast (default `Diwali`, `2026-11-08`); rolls to next year once passed |
 | `GROQ_FAKE=1` | Deterministic fake Groq (tests/offline) |
 | `TWILIO_*`, `ELEVENLABS_*` | Optional env fallbacks — normally set in **Admin → Providers** (DB values win; secrets are masked in the UI) |
 
@@ -112,7 +113,7 @@ All of this is configured from **Admin → Providers** in the app (log in as adm
 
 ### Twilio Voice (supplier calls + calling Munshi)
 1. Buy/verify a voice-capable Twilio number; enter it as **Voice number**.
-2. Paste the **"A call comes in"** URL from the app into that number's config to let Raj *call Munshi* (identified by his WhatsApp number).
+2. Paste the **"A call comes in"** URL from the app into that number's config to let the owner *call Munshi* (identified by the WhatsApp number saved in Settings).
 3. Outbound supplier calls use `<Play>` (signed TTS URL) + `<Record>` per turn: recording → Whisper → LLM → next line, max 6 turns, then the order is recorded with discount + ETA. Trial accounts can only call verified numbers.
 
 ### ⚠️ Safety while testing: **Test redirect number**
@@ -144,10 +145,13 @@ cd backend && .venv/bin/python scripts/smoke_groq.py
 cd frontend && npx playwright install chromium && npx playwright test
 E2E_LIVE=1 GROQ_API_KEY=… npx playwright test e2e/munshi.spec.ts   # same journey on real Groq
 
-# Production smoke
-E2E_BASE_URL=https://munshi-web-navy.vercel.app npx playwright test e2e/smoke.spec.ts
+# Production smoke + PWA checks (manifest, icons, service worker, Chrome installability, offline)
+E2E_BASE_URL=https://munshi-web-navy.vercel.app npx playwright test e2e/smoke.spec.ts e2e/pwa.spec.ts
+# PWA locally (service worker only registers in production builds):
+npm run build && npx vite preview --port 4174 &   # needs the API on :8000
+E2E_BASE_URL=http://127.0.0.1:4174 npx playwright test e2e/pwa.spec.ts
 ```
-The e2e suite covers: route protection, signup → onboarding → dashboard → logout → login, the full pitch journey
+The e2e suite covers: route protection, signup → onboarding → dashboard → logout → login, the full plan → approve → results journey
 (plan → nothing moves → approve → results → audit trail), rejection, spending-cap block, `haan` by text, **mic recording with a real Hindi clip**, notebook photo scan → import,
 manual ledger entries, admin mock/TTS/Twilio settings + secret masking, and no-overflow checks on desktop and mobile (Pixel 7).
 
@@ -173,6 +177,15 @@ cd ../frontend && vercel link --project <web-project> && vercel deploy --prod
 
 ---
 
+## Install as an app (PWA)
+Open the site in Chrome (Android or desktop) and use **Install app** in the sidebar / More menu / Settings, or Chrome's own install icon. On iPhone: Safari → Share → *Add to Home Screen*.
+* `public/manifest.webmanifest` — standalone display, start URL `/app`, theme colour, any + maskable icons, home-screen shortcuts (*Ask Munshi*, *Udhaar ledger*) and install-dialog screenshots.
+* `public/sw.js` — app-shell caching with offline fallback (`offline.html`). **`/api/*` is never cached**, so balances, plans and approvals always come from the network.
+* Icons are rendered from the logo by `npm run icons` (`scripts/gen-icons.mjs`).
+* The UI is mobile-first: bottom tab bar with safe-area insets, 16 px inputs (no iOS zoom-on-focus), route-level code splitting, tested at Pixel 7 size for horizontal overflow.
+
+---
+
 ## Security notes
 * Secrets live only in `backend/.env` (gitignored) and Vercel env. Twilio/ElevenLabs secrets are stored in the DB and **masked** in every API response.
 * JWT bearer auth, bcrypt passwords, strict per-shop tenant isolation on every query, admin-only provider/settings endpoints.
@@ -185,4 +198,3 @@ cd ../frontend && vercel link --project <web-project> && vercel deploy --prod
 * Single-language UI copy is Hinglish; the planner and TTS are Hindi-first.
 * Groq limits are per serverless instance (in-process); a shared limiter (Redis) would be needed at scale.
 
-*Outcomes in the pitch are pilot targets from a demo dataset, not measured results.*

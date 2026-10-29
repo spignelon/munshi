@@ -1,5 +1,5 @@
 """Fixed approval rules. The agent proposes; these rules decide. They run when an
-action is proposed (to warn Raj early) and again, authoritatively, at execution."""
+action is proposed (to warn the owner early) and again, authoritatively, at execution."""
 from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
@@ -15,7 +15,7 @@ MONEY_ACTIONS = {"supplier_order"}
 def check(db: Session, shop: Shop, action: Action, *, require_approval: bool = False) -> str | None:
     """Returns a human-readable block reason, or None if the action may proceed."""
     if require_approval and action.type != "stock_report" and not action.approval_id:
-        return "Raj ki approval ke bina kuch nahi hoga (no approval on record)."
+        return "Owner ki approval ke bina kuch nahi hoga (no approval on record)."
 
     if action.type in MONEY_ACTIONS:
         if action.amount > shop.per_order_cap:

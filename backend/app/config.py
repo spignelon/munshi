@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     admin_email: str = "admin@munshi.app"
     admin_password: str = "admin12345"
-    demo_email: str = "raj@munshi.demo"
+    demo_email: str = "demo@munshi.app"
     demo_password: str = "demo12345"
 
     public_base_url: str = "http://localhost:8000"

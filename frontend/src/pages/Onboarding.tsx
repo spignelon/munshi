@@ -52,8 +52,8 @@ export default function Onboarding() {
             <h1 className="mt-1 text-2xl font-semibold">Munshi ko dukaan ke baare mein batayein</h1>
             <div className="mt-5 space-y-4">
               <Field label="Shop name">{(id) => <Input id={id} value={f.name} onChange={set("name")} />}</Field>
-              <Field label="Locality">{(id) => <Input id={id} value={f.locality} onChange={set("locality")} placeholder="Lajpat Nagar, Delhi" />}</Field>
-              <Field label="UPI ID" hint="Udhaar reminders carry a pay link to this UPI ID.">{(id) => <Input id={id} value={f.upi_vpa} onChange={set("upi_vpa")} placeholder="rajkirana@paytm" />}</Field>
+              <Field label="Locality">{(id) => <Input id={id} value={f.locality} onChange={set("locality")} placeholder="Locality, City" />}</Field>
+              <Field label="UPI ID" hint="Udhaar reminders carry a pay link to this UPI ID.">{(id) => <Input id={id} value={f.upi_vpa} onChange={set("upi_vpa")} placeholder="yourshop@paytm" />}</Field>
               <Field label="Your WhatsApp number" hint="Munshi takes your “haan” and sends your evening brief here.">{(id) => <Input id={id} type="tel" value={f.whatsapp_number} onChange={set("whatsapp_number")} placeholder="+91 98765 43210" />}</Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Max per order (₹)" hint="Bigger supplier orders are blocked.">{(id) => <Input id={id} type="number" min={0} value={f.per_order_cap} onChange={set("per_order_cap")} />}</Field>
@@ -70,7 +70,7 @@ export default function Onboarding() {
             <div className="mt-5 grid gap-3">
               <button onClick={() => finish(true)} disabled={!!busy} className="rounded-2xl border-2 border-saffron-500 bg-saffron-500/10 p-4 text-left transition hover:bg-saffron-500/15 disabled:opacity-60">
                 <span className="flex items-center gap-2 font-display text-lg font-semibold"><Sparkles className="size-5 text-saffron-700" aria-hidden />Demo data se shuru karein {busy === "demo" && "…"}</span>
-                <span className="mt-1 block text-sm text-ink-500">90 din ki Paytm sales, 41 udhaar customers (₹38,000), 40 products, 5 suppliers aur Diwali ki tayyari. Munshi ko turant try karein.</span>
+                <span className="mt-1 block text-sm text-ink-500">90 din ki Paytm sales, 41 udhaar customers (₹38,000), 40 products, 5 suppliers aur tyohaar-season ka stock gap. Munshi ko turant try karein.</span>
               </button>
               <button onClick={() => finish(false)} disabled={!!busy} className="rounded-2xl border border-cream-300 bg-white p-4 text-left transition hover:bg-cream-100 disabled:opacity-60">
                 <span className="flex items-center gap-2 font-display text-lg font-semibold"><Database className="size-5 text-ink-500" aria-hidden />Khaali dukaan {busy === "empty" && "…"}</span>

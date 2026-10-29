@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { DIWALI, adminLogin, demoLogin, sendToMunshi } from "./helpers";
+import { FULL_PLAN, adminLogin, demoLogin, sendToMunshi } from "./helpers";
 
 test("merchants cannot open the admin console", async ({ page }) => {
   await demoLogin(page, false);
@@ -41,7 +41,7 @@ test("admin: mock toggle, TTS provider, secrets masked, system status", async ({
   await expect(page.getByText("live", { exact: true })).toBeVisible();
 
   await demoLoginSwitch(page);
-  await sendToMunshi(page, DIWALI);
+  await sendToMunshi(page, FULL_PLAN);
   await page.getByRole("button", { name: "Haan, karo" }).click();
   await expect(page.getByText(/Twilio is not configured/).first()).toBeVisible({ timeout: 30_000 });
 

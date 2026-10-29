@@ -59,7 +59,7 @@ def users(db: Session = Depends(get_db)):
 
 
 class TtsTestIn(BaseModel):
-    text: str = "Namaste Raj ji, main Munshi hoon. Aapki dukaan ka hisaab taiyaar hai."
+    text: str = "Namaste, main Munshi hoon. Aapki dukaan ka hisaab taiyaar hai."
     provider: str | None = None
 
 

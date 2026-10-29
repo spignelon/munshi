@@ -18,7 +18,7 @@ export default function Customers() {
   return (
     <div>
       <PageHeader eyebrow="Jo gaye, unhe bulayein" title="Customers">
-        {lapsed && rows.length > 0 && <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent("Purane customers ko wapas bulane ka Diwali offer bhejo")}&send=1`)}><Sparkles className="size-4" aria-hidden />Munshi se wapas bulwayein</Button>}
+        {lapsed && rows.length > 0 && <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent("Purane customers ko wapas bulane ka offer bhejo")}&send=1`)}><Sparkles className="size-4" aria-hidden />Munshi se wapas bulwayein</Button>}
       </PageHeader>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div role="group" aria-label="Filter" className="inline-flex rounded-xl bg-cream-200 p-1">

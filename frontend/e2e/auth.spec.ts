@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 test("protected routes redirect to login, then back after login", async ({ page }) => {
   await page.goto("/app/udhaar");
   await expect(page).toHaveURL(/\/login/);
-  await page.getByRole("button", { name: "Try demo as Raj" }).click();
-  await expect(page.getByRole("heading", { name: /Namaste, Raj ji/ })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Try the demo" }).click();
+  await expect(page.getByRole("heading", { name: /Namaste, Ramesh ji/ })).toBeVisible({ timeout: 30_000 });
 });
 
 test("wrong password shows an error", async ({ page }) => {

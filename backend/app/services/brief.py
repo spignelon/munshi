@@ -1,4 +1,4 @@
-"""Evening brief: what happened today, in Raj's Hinglish. Deterministic (no LLM tokens)."""
+"""Evening brief: what happened today, in Hinglish. Deterministic (no LLM tokens)."""
 from datetime import date, datetime
 
 from sqlalchemy import func
@@ -21,7 +21,7 @@ def build(db: Session, shop: Shop, send: bool = False) -> Brief:
     low = db.query(Product).filter(Product.shop_id == shop.id, Product.stock < Product.reorder_level).count()
     owed = business.udhaar_total(db, shop)
 
-    parts = [f"Raj ji, aaj ka hisaab: {business.inr(sm['today'])} ki sales, {sm['today_payments']} payments."]
+    parts = [f"Aaj ka hisaab: {business.inr(sm['today'])} ki sales, {sm['today_payments']} payments."]
     if recovered:
         parts.append(f"Udhaar mein {business.inr(recovered)} wapas aaya.")
     parts.append(f"Abhi {business.inr(owed)} udhaar baaki hai.")
@@ -41,7 +41,7 @@ def build(db: Session, shop: Shop, send: bool = False) -> Brief:
         brief = Brief(shop_id=shop.id, day=today, text=text, stats=stats)
         db.add(brief)
     if send and shop.whatsapp_number:
-        m = messaging.send_whatsapp(db, shop, to=shop.whatsapp_number, body=text, recipient_name="Raj (owner)", direct=True)
+        m = messaging.send_whatsapp(db, shop, to=shop.whatsapp_number, body=text, recipient_name="Owner", direct=True)
         brief.sent = m.status == "sent"
     db.commit()
     return brief
