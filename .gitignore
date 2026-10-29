@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite3
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# node
+node_modules/
+dist/
+.vite/
+
+# vercel
+.vercel/
+
+# playwright
+test-results/
+playwright-report/
+frontend/e2e/.auth/
+screenshots/
+
+# os/editor
+.DS_Store
+.idea/
+.vscode/
