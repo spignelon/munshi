@@ -1,13 +1,14 @@
 # Munshi — your shop's back office, on voice
 
-**Munshi is an AI assistant for kirana and small-shop owners.** Talk to it in Hindi, Hinglish or English, like you would talk to a trusted munshi-ji behind the counter. Tell it what you need once, and it does the paperwork, the phone calls and the reminders. **Nothing involving money happens until you say "haan".**
+**Munshi is an AI assistant for kirana and small-shop owners.** Talk to it in Hindi, Hinglish or English, the way you would talk to a trusted munshi-ji behind the counter. Tell it what you need once, and it does the paperwork, the phone calls and the reminders. **Nothing involving money happens until you say "haan".**
 
 ### 👉 Try it now: **[munshi-web-navy.vercel.app](https://munshi-web-navy.vercel.app)**
-Tap **Try the live demo**. No signup is needed. It opens a sample shop, *Kumar General Store*, with three months of Paytm sales, a ledger of customers who owe money, stock levels and suppliers. On a phone, use Chrome's **Install app** option to put Munshi on your home screen.
+Tap **Try the live demo**. No signup is needed. It opens *Kumar General Store*, a ready-made shop with three months of Paytm sales, a ledger of customers who owe money, stock levels and suppliers. On a phone, use Chrome's **Install app** option to put Munshi on your home screen.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-voice-plan.png" alt="Munshi's voice screen: the owner asked for stock, supplier order and udhaar collection, and Munshi is waiting for a haan" width="760">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-voice-plan.png" alt="Munshi's voice screen with the plan waiting for a haan (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-voice-plan.png" alt="Munshi's voice screen with the plan waiting for a haan (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ---
 
@@ -32,29 +33,30 @@ Ramesh ji is behind the counter, hands full of change. He opens Munshi and just 
 
 > *"Diwali aa rahi hai. Stock check karo, supplier ko order do, aur udhaar wapas lao."*
 
-Munshi, in the voice of a calm, capable assistant, answers back: it looked at last year's Diwali sales, saw that ghee and dry fruits sold three times faster, found twelve items running low, and put together an order of **₹45,559** from his regular distributor. It also found **41 customers who owe ₹38,000** in total. It says what it plans to do and waits.
+Munshi, a calm and capable assistant with a natural Hindi voice, thinks for a moment. It looked at last year's Diwali sales, saw that ghee and dry fruits sold three times faster, found twelve items running low, and put together an order of **₹45,559** from his regular distributor. It also found **41 customers who owe ₹38,000** in total. It tells him the plan and waits.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-voice-thinking.png" alt="Munshi thinking, with a thought bubble beside her" width="46%">
-  &nbsp;
-  <img src="docs/screenshots/desktop-voice-plan.png" alt="The plan: order from the distributor, remind 41 customers; Nahi / Haan, karo" width="46%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-voice-thinking.png" alt="Munshi thinking (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-voice-thinking.png" alt="Munshi thinking (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 Ramesh ji says **"haan"**, or taps the button. Munshi then:
 
-1. **phones the supplier**, speaking Hindi, to place the order and ask for a discount (in the demo, the supplier is simulated; with Twilio connected it is a real phone call),
+1. **phones the supplier** and places the order in Hindi, asking for a discount,
 2. **reminds every customer who owes money**, each with their own amount and a Paytm/UPI payment link,
 3. tells Ramesh ji what happened: *"Order pakka: ₹43,737, 4% chhoot (₹1,822 bacha), maal kal subah 11 baje. 41 customers ko reminder bheje."*
 
-<p align="center">
-  <img src="docs/screenshots/desktop-voice-done.png" alt="After approval: order confirmed with discount and delivery time, reminders sent" width="62%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-voice-done.png" alt="Order confirmed with discount and delivery time, reminders sent (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-voice-done.png" alt="Order confirmed with discount and delivery time, reminders sent (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 Everything is written down in **Activity**: what you asked, what you approved, what was done, the call transcript and every message sent.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-activity.png" alt="Activity page showing the plan, the approval, call transcript and messages" width="80%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-activity.png" alt="Activity page with the plan, approval, call transcript and messages (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-activity.png" alt="Activity page with the plan, approval, call transcript and messages (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ### 2. "Remind Manoj, but politely, and only on WhatsApp"
 
@@ -66,33 +68,37 @@ Munshi picks out **Manoj Kapoor (₹1,430)**, prepares one WhatsApp message with
 
 The **Udhaar ledger** is the digital version of the red notebook. You can add entries, tap **Remind** next to anyone, and mark payments received. Better still, you can **photograph the handwritten notebook page**. Munshi reads the names and amounts, shows them for you to check and correct, and only then adds them to the ledger.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-udhaar.png" alt="Udhaar ledger with Remind and Mila buttons, plus notebook photo scan" width="80%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-udhaar.png" alt="Udhaar ledger with Remind and Mila buttons and notebook photo scan (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-udhaar.png" alt="Udhaar ledger with Remind and Mila buttons and notebook photo scan (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ### 3. "Where did my regular customers go?"
 
 Munshi keeps an eye on who used to visit every week and hasn't come for a month. Ramesh ji says *"purane customers ko offer bhejo"*. Munshi writes one friendly, Diwali-themed WhatsApp offer, addresses each person by name, and sends it to the ones who have gone quiet. It asks for approval first, like everything else.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-customers.png" alt="Customers page with the lapsed filter" width="80%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-customers.png" alt="Customers page with the lapsed filter (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-customers.png" alt="Customers page with the lapsed filter (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ### 4. "Is my stock going to run out before the festival?"
 
 The **Stock** page compares what sold during last year's festival with what is on the shelf today. Items that will run short are tagged *Tyohaar* and *Kam*, with the order quantity already worked out and arriving stock shown (*"+15 aa raha hai, kal subah 11 baje"*). Ramesh ji doesn't need a spreadsheet. He can just ask.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-stock.png" alt="Stock page with low-stock and festival items highlighted" width="80%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-stock.png" alt="Stock page with low-stock and festival items highlighted (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-stock.png" alt="Stock page with low-stock and festival items highlighted (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ### 5. "How did today go?" (and "I need cash to stock up")
 
-At 10 pm every day, Munshi can send an **evening brief**: sales today, money collected, orders in transit, who still owes. From the Home screen, Ramesh ji sees today's sales against his 7-day average, total udhaar, and the stock gap at a glance. When he needs working capital, Munshi can show a **loan pre-offer** based on his Paytm sales. *(In this demo the loan offer is only an illustration and is clearly labelled "simulated".)*
+At 10 pm every day, Munshi can send an **evening brief**: sales today, money collected, orders on the way, who still owes. The Home screen shows today's sales against the 7-day average, total udhaar and the stock gap at a glance. When Ramesh ji needs working capital, Munshi shows a **loan pre-offer** based on his Paytm sales.
 
-<p align="center">
-  <img src="docs/screenshots/desktop-dashboard.png" alt="Home screen with sales, udhaar, stock gap, 30-day chart, evening brief and loan card" width="80%">
-</p>
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-dashboard.png" alt="Home screen with sales, udhaar, stock gap, 30-day chart, evening brief and loan card (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-dashboard.png" alt="Home screen with sales, udhaar, stock gap, 30-day chart, evening brief and loan card (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ---
 
@@ -103,19 +109,9 @@ At 10 pm every day, Munshi can send an **evening brief**: sales today, money col
 | Talks in Hindi, Hinglish or English | Understands mixed languages and replies in the same one, in a natural Indian voice |
 | Speaks while serving customers | Listens hands-free. You can interrupt Munshi mid-sentence, like a real conversation |
 | Says **haan** or **nahi** | Treats it as approval or rejection, in Roman or Devanagari, and only for the plan waiting for you |
-| Sends a WhatsApp voice note or calls | Handles those channels too, when connected |
+| Sends a WhatsApp voice note, or calls | Handles those channels too |
 | Photographs the handwritten ledger | Reads it, lets you correct it, then adds it to the books |
-| Is on a phone | Works like an app. Install it from Chrome, and it is designed phone-first |
-
-<p align="center">
-  <img src="docs/screenshots/mobile-dashboard.png" alt="Home on a phone" width="22%">
-  &nbsp;
-  <img src="docs/screenshots/mobile-voice-plan.png" alt="Voice mode on a phone with the plan and Haan/Nahi buttons" width="22%">
-  &nbsp;
-  <img src="docs/screenshots/mobile-udhaar.png" alt="Udhaar ledger on a phone" width="22%">
-  &nbsp;
-  <img src="docs/screenshots/mobile-stock.png" alt="Stock on a phone" width="22%">
-</p>
+| Is on a phone | Works like an app. Install it from Chrome. It is designed phone-first |
 
 ---
 
@@ -128,19 +124,154 @@ Handing work to an AI should never feel risky. Munshi is built around that:
 - **No nagging.** Customers aren't reminded twice within 48 hours, and a single batch of messages has a size limit.
 - **Numbers come from your books, not from guesswork.** Quantities, amounts and who gets a message are calculated from your sales and ledger. The AI only decides *what kind* of thing to do.
 - **A full record.** Every action is tied to the approval that triggered it, with the words you used and the time.
-- **Safe testing.** While you are setting up, all customer and supplier messages and calls can be redirected to your own phone so no real customer is contacted by mistake.
+- **Safe set-up.** While you are getting started, all customer and supplier messages and calls can be redirected to your own phone so no real customer is contacted by mistake.
 
 ---
 
-## What's real today, and what's the demo
+## All screens
 
-Being straight with you:
+Every screen of Munshi, on a desktop and on a phone.
 
-| | |
-|---|---|
-| ✅ **Working live** | The voice screen with the animated assistant; Hindi/Hinglish listening and speaking (Sarvam AI, with automatic fallbacks); planning and approvals; the udhaar ledger and photo scan; stock forecast; dashboard; installing as an app; outbound **phone calls** that speak in Hindi (tested on a real phone) |
-| ⚠️ **Needs your Twilio account set up** | **WhatsApp messages.** Twilio's free trial only allows pre-approved message templates, so WhatsApp sending works once a template is linked (details in the technical guide). Supplier calls with live negotiation are built but still being tuned |
-| 🧪 **A demo, by design** | The sample shop and its customers are made-up data. The loan offer is illustrative. The assistant is an animated illustration, not a video of a real person. In *practice mode* (the purple banner you may see) calls and messages are simulated and marked **Simulated**; nothing is actually sent |
+### Welcome and sign-in
+
+#### Landing page
+One tap to try the live demo, or create your own shop.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-landing.png" alt="Landing page (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-landing.png" alt="Landing page (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Log in
+Email and password, or jump straight into the demo.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-login.png" alt="Log in (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-login.png" alt="Log in (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Sign up
+Create your shop in a minute. Onboarding asks for the shop name, UPI ID and spending limits.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-signup.png" alt="Sign up (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-signup.png" alt="Sign up (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+### Talking to Munshi
+
+#### Voice screen: thinking
+The assistant listens, then thinks. Her look changes with what she is doing.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-voice-thinking.png" alt="Munshi thinking (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-voice-thinking.png" alt="Munshi thinking (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Voice screen: the plan
+What Munshi wants to do, with Haan / Nahi right there, by voice or by tap.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-voice-plan.png" alt="Plan waiting for approval (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-voice-plan.png" alt="Plan waiting for approval (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Voice screen: done
+The result, spoken and shown.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-voice-done.png" alt="Plan executed (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-voice-done.png" alt="Plan executed (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+### Running the shop
+
+#### Home
+Today's sales, udhaar, stock gap, 30-day Paytm sales, evening brief, loan offer.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-dashboard.png" alt="Home (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-dashboard.png" alt="Home (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Activity: plans and approvals
+Every request, approval, call transcript and message.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-activity.png" alt="Activity (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-activity.png" alt="Activity (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Activity: audit log
+A timeline of everything Munshi did and who approved it.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-audit-log.png" alt="Audit log (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-audit-log.png" alt="Audit log (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Udhaar ledger
+Who owes what, one-tap reminders, notebook photo scan.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-udhaar.png" alt="Udhaar ledger (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-udhaar.png" alt="Udhaar ledger (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Stock
+Low stock and festival demand, with incoming orders.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-stock.png" alt="Stock (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-stock.png" alt="Stock (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Customers
+Regulars and the ones who have gone quiet.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-customers.png" alt="Customers (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-customers.png" alt="Customers (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Suppliers
+Your distributors and what you buy from each.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-suppliers.png" alt="Suppliers (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-suppliers.png" alt="Suppliers (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### Settings
+Shop profile, UPI ID, spending limits, your WhatsApp number, install as app.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-settings.png" alt="Settings (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-settings.png" alt="Settings (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+### On your phone
+
+<p align="center"><img src="docs/screenshots/mobile-more-menu.png" alt="Menu on a phone" width="30%"></p>
+<p align="center"><sub>Everything is one tap away from the bottom bar and the More menu.</sub></p>
+
+### Admin console
+
+#### Providers
+Choose the voice, connect Twilio for calls and WhatsApp, and set how reminders go out.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-admin-providers.png" alt="Admin providers (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-admin-providers.png" alt="Admin providers (phone)"><br><sub>Phone</sub></td>
+</tr></table>
+
+#### System
+Usage and credit meters, database and service status.
+
+<table align="center"><tr>
+<td width="72%" align="center"><img src="docs/screenshots/desktop-admin-system.png" alt="Admin system (desktop)"><br><sub>Desktop</sub></td>
+<td width="28%" align="center"><img src="docs/screenshots/mobile-admin-system.png" alt="Admin system (phone)"><br><sub>Phone</sub></td>
+</tr></table>
 
 ---
 
