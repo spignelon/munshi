@@ -159,3 +159,33 @@ def test_voice_message_webhook_plays_stored_text(client, merchant):
     r = client.post(f"/api/webhooks/voice/message?m={mid}", data={})
     assert r.status_code == 200 and "<Play>" in r.text and "<Hangup" in r.text
     assert client.post("/api/webhooks/voice/message?m=999999", data={}).status_code == 404
+
+
+def test_supplier_call_webhooks_accept_our_capability_urls_only(client, merchant, admin, monkeypatch):
+    """Real mode, no X-Twilio-Signature (what Twilio trial accounts send): only the ?k= URLs we generated are accepted."""
+    from app.db import SessionLocal
+    from app.models import Action, CallSession
+    from app.services import telephony
+    FakeTwilio.sent = []
+    monkeypatch.setattr(telephony, "_twilio_client", lambda db: (FakeTwilio(), {"twilio_voice_number": "+15550001111"}))
+    plan = client.post("/api/agent/command", data={"text": "supplier ko order do"}, headers=merchant).json()["plan"]
+    aid = next(a["id"] for a in plan["actions"] if a["type"] == "supplier_order")
+    client.put("/api/admin/settings", json={"values": {"mock_mode": False, "twilio_auth_token": "tok12345", "test_redirect_number": "+919000000003"}}, headers=admin)
+    try:
+        r = client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True, "action_ids": [aid]}, headers=merchant)
+        assert r.status_code == 200
+        assert FakeTwilio.sent, [(a["status"], a.get("blocked_reason"), a.get("result")) for a in r.json()["plan"]["actions"]]
+        call = next(kw for kind, kw in FakeTwilio.sent if kind == "call")
+        assert set(call) <= {"to", "from_", "url", "status_callback", "status_callback_event"}
+        url, status_url = call["url"], call["status_callback"]
+        assert "k=" in url and "k=" in status_url
+        path, qs = url.replace("http://testserver", "").split("?")
+        assert client.post(path + "?cs=" + qs.split("cs=")[1].split("&")[0] + "&k=bad").status_code == 403
+        ok = client.post(path + "?" + qs)
+        assert ok.status_code == 200 and "<Record" in ok.text and "k=" in ok.text  # next turn URL is itself a capability URL
+    finally:
+        client.put("/api/admin/settings", json={"values": {"mock_mode": True, "twilio_auth_token": "", "test_redirect_number": ""}}, headers=admin)
+        from app.models import AppSetting
+        with SessionLocal() as db:
+            db.query(AppSetting).filter(AppSetting.key == "twilio_auth_token").delete()
+            db.commit()

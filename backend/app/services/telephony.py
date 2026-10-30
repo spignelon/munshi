@@ -64,10 +64,11 @@ def place_real_call(db: Session, shop: Shop, action: Action) -> CallSession:
                      status="queued", simulated=False, transcript=[], outcome={})
     db.add(cs)
     db.flush()
-    base = get_settings().public_base_url.rstrip("/")
+    from ..routers.webhooks import cap_url
+
     call = client.calls.create(
-        to=dest, from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/supplier?cs={cs.id}",
-        status_callback=f"{base}/api/webhooks/voice/status?cs={cs.id}",
+        to=dest, from_=cfg["twilio_voice_number"], url=cap_url("/api/webhooks/voice/supplier", cs.id),
+        status_callback=cap_url("/api/webhooks/voice/status", cs.id),
         status_callback_event=["completed"])
     cs.twilio_sid = call.sid
     return cs

@@ -48,6 +48,12 @@ async def _form(request: Request, db: Session, cap_ref: str | None = None) -> di
     return form
 
 
+def cap_url(path: str, ref: int) -> str:
+    """URL for a webhook we hand to Twilio ourselves. Trial-account call webhooks arrive without X-Twilio-Signature, so these carry a
+    secret-derived ?k= token (bound to path + call id) that _form accepts when the signature is absent or wrong."""
+    return f"{get_settings().public_base_url.rstrip('/')}{path}?{urlencode({'cs': ref, 'k': tts.cap_token(path, str(ref))})}"
+
+
 def _digits(p: str) -> str:
     return re.sub(r"\D", "", p or "")[-10:]
 
@@ -151,7 +157,7 @@ def _finish(db: Session, shop: Shop, action: Action, cs: CallSession, outcome: d
 
 @router.post("/voice/supplier")
 async def voice_supplier(cs: int, request: Request, db: Session = Depends(get_db)):
-    await _form(request, db)
+    await _form(request, db, cap_ref=str(cs))
     call, action, shop = _load_call(db, cs)
     line = telephony.opening_line(shop, action)
     call.status = "in_progress"
@@ -159,13 +165,13 @@ async def voice_supplier(cs: int, request: Request, db: Session = Depends(get_db
     db.commit()
     resp = VoiceResponse()
     _play(resp, line)
-    _record(resp, f"{get_settings().public_base_url.rstrip('/')}/api/webhooks/voice/supplier/turn?{urlencode({'cs': cs})}")
+    _record(resp, cap_url("/api/webhooks/voice/supplier/turn", cs))
     return _xml(resp)
 
 
 @router.post("/voice/supplier/turn")
 async def voice_supplier_turn(cs: int, request: Request, db: Session = Depends(get_db)):
-    form = await _form(request, db)
+    form = await _form(request, db, cap_ref=str(cs))
     call, action, shop = _load_call(db, cs)
     heard = ""
     url = form.get("RecordingUrl")
@@ -193,14 +199,14 @@ async def voice_supplier_turn(cs: int, request: Request, db: Session = Depends(g
         resp.hangup()
         _finish(db, shop, action, call, step["outcome"])
     else:
-        _record(resp, f"{get_settings().public_base_url.rstrip('/')}/api/webhooks/voice/supplier/turn?{urlencode({'cs': cs})}")
+        _record(resp, cap_url("/api/webhooks/voice/supplier/turn", cs))
     db.commit()
     return _xml(resp)
 
 
 @router.post("/voice/status")
 async def voice_status(cs: int, request: Request, db: Session = Depends(get_db)):
-    form = await _form(request, db)
+    form = await _form(request, db, cap_ref=str(cs))
     call, action, shop = _load_call(db, cs)
     st = form.get("CallStatus", "")
     if action.status == "executing":  # hung up / never answered before an outcome was recorded
