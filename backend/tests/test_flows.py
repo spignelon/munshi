@@ -223,3 +223,15 @@ def test_yes_no_detection_in_both_scripts():
     # sentences that merely contain yes-ish words are NOT approvals
     for t in ["stock check karo", "स्टॉक चेक करो, सप्लायर को ऑर्डर दो, और उधार वापस लाओ", "ji", "कर दो", "do", "aaj ki sales kaisi rahi", "सप्लायर को ऑर्डर दो"]:
         assert c(t) is None, t
+
+
+def test_reminder_can_target_one_customer_and_explains_cooldown(client, merchant):
+    out = cmd(client, merchant, "Manoj ko udhaar reminder bhejo, call nahi bas whatsapp")
+    act = next(a for a in out["plan"]["actions"] if a["type"] == "udhaar_reminders")
+    assert act["title"].startswith("Manoj Kapoor ko WhatsApp")
+    done = client.post(f"/api/plans/{out['plan']['id']}/decision", json={"approve": True}, headers=merchant).json()["plan"]
+    assert next(a for a in done["actions"] if a["type"] == "udhaar_reminders")["result"]["sent"] == 1  # one person, not all 41
+    # same person again inside 48h: blocked with a reason that names the cooldown, not a vague "no customer"
+    again = cmd(client, merchant, "Manoj ko udhaar reminder bhejo")
+    blocked = next(a for a in again["plan"]["actions"] if a["type"] == "udhaar_reminders")
+    assert blocked["status"] == "blocked" and "48 ghante" in blocked["blocked_reason"]

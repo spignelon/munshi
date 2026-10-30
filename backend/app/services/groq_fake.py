@@ -22,22 +22,27 @@ def fake_chat(purpose: str, messages: list) -> str:
         if any(w in text for w in ("stock", "order", "supplier", "maal", "restock")):
             actions.append({"type": "supplier_order", "supplier": "Shree Foods Distributors", "discount_ask_pct": 4})
         if any(w in text for w in ("udhaar", "udhar", "wapas lao", "paise", "dues", "collect")):
-            actions.append({"type": "udhaar_reminders", "tone": "polite"})
+            act = {"type": "udhaar_reminders", "tone": "polite"}
+            if "manoj" in text:
+                act["customer"] = "Manoj"
+            if "whatsapp" in text and "call nahi" in text:
+                act["channel"] = "whatsapp"
+            actions.append(act)
         if any(w in text for w in ("customer", "winback", "wapas bulao", "offer", "festival")):
             actions.append({"type": "winback_offer", "offer": "10% chhoot is hafte"})
         if "loan" in text:
             actions.append({"type": "loan_offer"})
         if any(w in text for w in ("report", "stock")) and not any(a["type"] == "supplier_order" for a in actions):
             actions.append({"type": "stock_report"})
-        reply = ("Theek hai, maine plan bana liya hai. Approve karein toh main kaam shuru kar dunga."
+        reply = ("Theek hai, maine plan bana liya hai. Approve karein toh main kaam shuru kar dungi."
                  if actions else "Aaj ka hisaab theek hai. Kuch aur karna ho toh bataiye.")
         return json.dumps({"reply": reply, "actions": actions}, ensure_ascii=False)
     if purpose == "supplier_script":
         return json.dumps({
             "transcript": [
-                {"speaker": "munshi", "text": "Namaste, main dukaan ki taraf se Munshi bol raha hoon. Stock ka order dena hai."},
+                {"speaker": "munshi", "text": "Namaste, main dukaan ki taraf se Munshi bol rahi hoon. Stock ka order dena hai."},
                 {"speaker": "supplier", "text": "Haan haan boliye, kya chahiye?"},
-                {"speaker": "munshi", "text": "Ghee aur dry fruits ki list bhej raha hoon. Total maal ka rate kuch kam kar dijiye."},
+                {"speaker": "munshi", "text": "Ghee aur dry fruits ki list bhej rahi hoon. Total maal ka rate kuch kam kar dijiye."},
                 {"speaker": "supplier", "text": "Theek hai, 4 percent chhoot de dunga. Kal subah 11 baje tak pahunch jayega."},
                 {"speaker": "munshi", "text": "Bahut badhiya. Order pakka. Dhanyavaad."},
             ],

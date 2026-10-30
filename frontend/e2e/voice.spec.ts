@@ -9,7 +9,7 @@ test("voice mode: listens, detects the end of speech, plans, and approves from i
   await page.goto("/app/munshi"); // voice is the default Munshi screen: it opens listening immediately
   const vm = page.getByTestId("voice-mode");
   await expect(vm).toBeVisible();
-  await expect(page.getByTestId("voice-status")).toContainText(/sun raha|Boliye|Soch raha|bol raha/i);
+  await expect(page.getByTestId("voice-status")).toContainText(/sun rahi|Boliye|Soch rahi|bol rahi/i);
 
   // the fake mic speaks; after ~0.9 s of silence the utterance is sent and Munshi replies with a plan
   await expect(page.getByTestId("voice-heard")).toContainText("Stock check karo", { timeout: 45_000 });

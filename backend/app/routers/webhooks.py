@@ -192,7 +192,7 @@ async def voice_supplier_turn(cs: int, request: Request, db: Session = Depends(g
     try:
         step = telephony.supplier_turn(shop, action, call, heard)
     except (groq_client.GroqBusy, groq_client.GroqUnavailable):
-        step = {"say": "Ek minute, main aapko dobara call karta hoon. Dhanyavaad.", "done": True, "outcome": {"confirmed": False}}
+        step = {"say": "Ek minute, main aapko dobara call karti hoon. Dhanyavaad.", "done": True, "outcome": {"confirmed": False}}
     call.transcript = [*call.transcript, {"speaker": "munshi", "text": step["say"]}]
     _play(resp, step["say"])
     if step["done"]:

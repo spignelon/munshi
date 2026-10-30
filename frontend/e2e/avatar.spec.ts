@@ -13,7 +13,7 @@ test("avatar shows listening → thinking → speaking and her mouth moves with 
 
   await expect(avatar).toHaveAttribute("data-state", "thinking", { timeout: 10_000 });
   await expect(page.getByTestId("avatar-thinking")).toBeVisible();
-  await expect(page.getByTestId("voice-status")).toContainText("Soch raha hoon"); // status text and avatar agree
+  await expect(page.getByTestId("voice-status")).toContainText("Soch rahi hoon"); // status text and avatar agree
   await page.screenshot({ path: "screenshots/avatar-thinking.png" });
   await page.getByRole("button", { name: "Mute mic" }).click(); // the fake mic loops a Hindi clip; keep it out of the rest of this test
 

@@ -23,7 +23,7 @@ test.describe("Munshi voice screen (voice-first; no chat view)", () => {
     await expect(page.getByText(/Approved via web/).first()).toBeVisible();
     await expect(page.getByText("Simulated").first()).toBeVisible();
     await page.getByRole("button", { name: /Call transcript/ }).first().click();
-    await expect(page.getByText(/Munshi bol raha hoon/).first()).toBeVisible();
+    await expect(page.getByText(/Munshi bol rahi hoon/).first()).toBeVisible();
     await page.getByRole("tab", { name: "Audit log" }).click();
     await expect(page.getByText("plan_approved").first()).toBeVisible();
     await expect(page.getByText("supplier_order_confirmed").first()).toBeVisible();

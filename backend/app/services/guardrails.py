@@ -31,7 +31,13 @@ def check(db: Session, shop: Shop, action: Action, *, require_approval: bool = F
     if action.type in ("udhaar_reminders", "winback_offer"):
         n = len(action.payload.get("customers", []))
         if n == 0:
-            return "Koi eligible customer nahi mila (phone number ya cooldown check)."
+            cooling = action.payload.get("cooling", 0)
+            if cooling:
+                return (f"{cooling} customer(s) ko pichhle {REMIND_COOLDOWN_HOURS} ghante mein reminder ja chuka hai, isliye dobara nahi bhej sakte "
+                        "(customer ko pareshan na karne ka rule).")
+            asked = action.payload.get("asked_for")
+            return (f"'{asked}' naam ka koi udhaar wala customer (phone number ke saath) nahi mila." if asked
+                    else "Koi udhaar wala customer phone number ke saath nahi mila.")
         if n > MAX_RECIPIENTS:
             return f"Ek baar mein {MAX_RECIPIENTS} se zyada messages allowed nahi hain."
     return None

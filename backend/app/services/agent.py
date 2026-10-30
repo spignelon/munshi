@@ -16,10 +16,10 @@ from . import business, groq_client, guardrails
 
 ACTION_TYPES = {"supplier_order", "udhaar_reminders", "winback_offer", "loan_offer", "stock_report"}
 
-SYSTEM = """You are Munshi, an AI business assistant for a small shop owner in India (kirana / retail). Reply in the same language the owner used (Hinglish in Roman script by default, or Hindi/English): warm, brief and practical.
+SYSTEM = """You are Munshi, an AI business assistant for a small shop owner in India (kirana / retail). Reply in the same language the owner used (Hinglish in Roman script by default, or Hindi/English): warm, brief and practical. You are a woman: always speak about yourself in the feminine (e.g. "main kar rahi hoon", "bhej dungi", "samajh gayi"), never masculine forms like "raha hoon" or "dunga".
 You can PROPOSE these actions; nothing happens until the owner approves:
 - supplier_order: phone a supplier and order stock. fields: supplier (name), discount_ask_pct (number 0-8)
-- udhaar_reminders: WhatsApp reminders with a UPI pay link to customers who owe money. fields: tone ("polite"|"firm")
+- udhaar_reminders: reminders with a UPI pay link to customers who owe money. fields: tone ("polite"|"firm"); customer (optional: the person's name, ONLY when the owner names one specific customer, otherwise omit to remind everyone); channel (optional "whatsapp"|"call"|"both", ONLY when the owner says how to remind)
 - winback_offer: WhatsApp an offer to regulars who stopped visiting. fields: offer (short offer text, e.g. "10% chhoot is hafte")
 - loan_offer: present a working-capital loan pre-offer. no fields.
 - stock_report: summarise low stock (read-only). no fields.
@@ -106,15 +106,23 @@ def build_actions(db: Session, shop: Shop, plan: Plan, proposals: list[dict]) ->
 
         elif t == "udhaar_reminders":
             cutoff = guardrails.cooldown_cutoff()
-            cust = [{"id": c.id, "name": c.name, "phone": c.phone, "amount": bal}
-                    for c, bal in business.udhaar_balances(db, shop)
+            owing = business.udhaar_balances(db, shop)
+            who = str(prop.get("customer") or "").strip().lower()
+            if who:
+                owing = [(c, b) for c, b in owing if who in c.name.lower() or c.name.lower().split()[0] == who.split()[0]]
+            cust = [{"id": c.id, "name": c.name, "phone": c.phone, "amount": bal} for c, bal in owing
                     if c.phone and (c.last_reminded_at is None or c.last_reminded_at < cutoff)]
+            cooling = sum(1 for c, _ in owing if c.phone and c.last_reminded_at and c.last_reminded_at >= cutoff)
             total = sum(c["amount"] for c in cust)
+            channel = prop.get("channel") if prop.get("channel") in ("whatsapp", "call", "both") else ""
+            how = {"whatsapp": "WhatsApp", "call": "phone call", "both": "call + WhatsApp"}.get(channel, "reminder")
+            who_txt = cust[0]["name"] if len(cust) == 1 else f"{len(cust)} udhaar customers"
             out.append(Action(
                 plan_id=plan.id, shop_id=shop.id, type=t, amount=0,
-                title=f"{len(cust)} udhaar customers ko WhatsApp + Paytm link — {business.inr(total)} baaki",
+                title=f"{who_txt} ko {how} + Paytm link — {business.inr(total)} baaki" if cust else "Udhaar reminder abhi nahi ja sakta",
                 detail="Har customer ko uska hisaab aur UPI pay link bheja jayega.",
-                payload={"customers": cust, "tone": prop.get("tone") or "polite", "total": total}))
+                payload={"customers": cust, "tone": prop.get("tone") or "polite", "total": total, "channel": channel, "cooling": cooling,
+                         "asked_for": who}))
 
         elif t == "winback_offer":
             lapsed = [c for c in business.lapsed_customers(db, shop) if c.phone]

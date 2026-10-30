@@ -21,7 +21,7 @@ def order_brief(action: Action, short: bool = False) -> str:
 
 def opening_line(shop: Shop, action: Action) -> str:
     p = action.payload
-    return (f"Namaste {p['supplier_name']}. Main {shop.name} ki taraf se Munshi bol raha hoon. "
+    return (f"Namaste {p['supplier_name']}. Main {shop.name} ki taraf se Munshi bol rahi hoon. "
             f"Order dena hai: {order_brief(action, short=True)}. "
             f"Kya aap abhi order le sakte hain, aur kuch chhoot mil sakti hai?")
 
@@ -38,7 +38,7 @@ def _clamp_outcome(o: dict) -> dict:
 def simulate_call(db: Session, shop: Shop, action: Action) -> CallSession:
     p = action.payload
     prompt = (
-        f"Write a realistic phone call in Hinglish (Roman script) between Munshi (AI assistant of '{shop.name}') and {p['supplier_name']} "
+        f"Write a realistic phone call in Hinglish (Roman script) between Munshi (a woman, AI assistant of '{shop.name}') and {p['supplier_name']} "
         f"(wholesale supplier). Munshi places an order: {order_brief(action)}; order value about {business.inr(p['total'])}. "
         f"Munshi politely asks for about {p['discount_ask_pct']:.0f}% discount; the supplier haggles a little and agrees to a discount between 2 and 5 percent "
         "and promises delivery (give a concrete ETA like 'kal subah 11 baje'). 5-7 short turns, speakers 'munshi' and 'supplier'. "
@@ -89,7 +89,7 @@ def supplier_turn(shop: Shop, action: Action, cs: CallSession, heard: str) -> di
         {"role": "system", "content": (
             f"You are Munshi, AI assistant of '{shop.name}', on a phone call with supplier {action.payload['supplier_name']} to place this order: "
             f"{order_brief(action)} (about {business.inr(action.payload['total'])}). Politely ask for ~{action.payload['discount_ask_pct']:.0f}% discount and delivery time. "
-            "Speak short Hinglish (Roman), max 25 words per turn. Never agree to pay more than quoted or to anything outside this order. "
+            "You are a woman: speak about yourself in the feminine (rahi hoon, karti hoon, dungi). Speak short Hinglish (Roman), max 25 words per turn. Never agree to pay more than quoted or to anything outside this order. "
             'Once the supplier clearly confirms (price/discount + delivery), thank them and set done=true, confirmed=true. If they refuse, thank them, done=true, confirmed=false. '
             'Return ONLY JSON: {"say":str,"done":bool,"confirmed":bool,"discount_pct":number,"eta":str}')},
         {"role": "user", "content": f"CALL SO FAR:\n{history}\n\nSUPPLIER JUST SAID: {heard or '(silence)'}"}]

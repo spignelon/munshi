@@ -14,10 +14,10 @@ import { Button, Input } from "./ui";
 
 const STATUS: Record<VoiceState, { title: string; hint: string }> = {
   connecting: { title: "Mic shuru ho raha hai…", hint: "Browser mein mic ki permission allow karein" },
-  listening: { title: "Boliye, main sun raha hoon", hint: "Jaise: “Stock check karo aur supplier ko order do”" },
-  hearing: { title: "Sun raha hoon…", hint: "Bolna khatam karke ruk jaiye" },
-  thinking: { title: "Soch raha hoon…", hint: "" },
-  speaking: { title: "Munshi bol raha hai", hint: "Beech mein bol sakte hain, ya orb dabayein" },
+  listening: { title: "Boliye, main sun rahi hoon", hint: "Jaise: “Stock check karo aur supplier ko order do”" },
+  hearing: { title: "Sun rahi hoon…", hint: "Bolna khatam karke ruk jaiye" },
+  thinking: { title: "Soch rahi hoon…", hint: "" },
+  speaking: { title: "Munshi bol rahi hai", hint: "Beech mein bol sakte hain, ya orb dabayein" },
   error: { title: "Voice mode shuru nahi ho paaya", hint: "" },
 };
 

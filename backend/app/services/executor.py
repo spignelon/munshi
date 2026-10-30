@@ -120,7 +120,7 @@ def _recipients(db: Session, a: Action, mock: bool) -> list[dict]:
 
 def _reminder_speech(shop: Shop, name: str, amount: float, with_link: bool) -> str:
     link = " Payment ka link aapko WhatsApp par bhej diya hai." if with_link else ""
-    return (f"Namaste {name} ji. Main {shop.name} ki taraf se Munshi bol raha hoon. Aapke {int(amount)} rupaye ka udhaar baaki hai. "
+    return (f"Namaste {name} ji. Main {shop.name} ki taraf se Munshi bol rahi hoon. Aapke {int(amount)} rupaye ka udhaar baaki hai. "
             f"Kripya jaldi chuka dein.{link} Dhanyavaad.")
 
 
@@ -128,7 +128,7 @@ def _udhaar_reminders(db: Session, shop: Shop, a: Action, mock: bool) -> None:
     sent = failed = calls = 0
     recovered = 0.0
     first_error = ""
-    channel = settings_store.get(db, "reminder_channel")
+    channel = a.payload.get("channel") or settings_store.get(db, "reminder_channel")  # owner's words ("call nahi, WhatsApp") beat the default
     redirected = not mock and bool(settings_store.get(db, "test_redirect_number").strip())
     for c in _recipients(db, a, mock):
         cust = db.get(Customer, c["id"])
