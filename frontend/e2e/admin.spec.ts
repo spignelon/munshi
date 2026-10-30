@@ -63,3 +63,16 @@ async function adminLoginAgain(page: import("@playwright/test").Page) {
   await page.getByRole("tab", { name: "Users" }).click();
   await expect(page.getByTestId("user-row").first()).toBeVisible();
 }
+
+
+test("admin sees Sarvam voice controls and the credit meter", async ({ page }) => {
+  await adminLogin(page);
+  await page.goto("/app/admin");
+  const panel = page.getByTestId("sarvam-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByLabel("Sarvam API key")).toBeVisible();
+  await expect(panel.getByLabel("Sarvam voice")).toContainText("Simran");
+  await expect(panel.getByTestId("sarvam-meter")).toContainText("Estimated Sarvam spend");
+  await page.getByRole("tab", { name: "System" }).click();
+  await expect(page.getByText("Sarvam credits (this deployment)")).toBeVisible();
+});

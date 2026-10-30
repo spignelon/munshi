@@ -12,7 +12,7 @@ from twilio.twiml.voice_response import VoiceResponse
 from ..config import get_settings
 from ..db import get_db
 from ..models import Action, CallSession, Plan, Shop
-from ..services import agent, command, executor, groq_client, ocr, settings_store, telephony, tts
+from ..services import agent, command, executor, groq_client, ocr, settings_store, speech, telephony, tts
 
 router = APIRouter(prefix="/api/webhooks")
 
@@ -85,7 +85,7 @@ async def whatsapp(request: Request, db: Session = Depends(get_db)):
                 resp.message("Photo/voice note download nahi ho paaya. Twilio credentials check karein.")
                 return _xml(resp)
             if ctype.startswith("audio/"):
-                body = groq_client.transcribe(media, "voice.ogg")
+                body, _ = speech.transcribe(db, media, "voice.ogg")
             elif ctype.startswith("image/"):
                 entries = ocr.scan(db, shop, media, ctype)
                 if not entries:
@@ -158,7 +158,7 @@ async def voice_supplier_turn(cs: int, request: Request, db: Session = Depends(g
     url = form.get("RecordingUrl")
     if url:
         try:
-            heard = groq_client.transcribe(telephony.download_recording(db, url), "call.mp3")
+            heard, _ = speech.transcribe(db, telephony.download_recording(db, url), "call.mp3")
         except (groq_client.GroqBusy, groq_client.GroqUnavailable, Exception):  # noqa: BLE001
             heard = ""
     call.transcript = [*call.transcript, {"speaker": "supplier", "text": heard or "(unclear)"}]
@@ -223,7 +223,7 @@ async def voice_inbound_turn(shop: int, request: Request, db: Session = Depends(
     resp = VoiceResponse()
     url = form.get("RecordingUrl")
     try:
-        text = groq_client.transcribe(telephony.download_recording(db, url), "call.mp3") if url else ""
+        text = speech.transcribe(db, telephony.download_recording(db, url), "call.mp3")[0] if url else ""
         if not text:
             _play(resp, "Maaf kijiye, aawaz saaf nahi aayi. Dobara boliye.")
         else:

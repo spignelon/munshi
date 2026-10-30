@@ -14,7 +14,7 @@ from . import seed
 from sqlalchemy import event, inspect
 
 from .db import Base, SessionLocal, engine
-from .routers import admin, agent, core, data, public, webhooks
+from .routers import admin, agent, core, data, public, voice, webhooks
 from .services.groq_client import GroqBusy, GroqUnavailable
 from .services.messaging import ProviderNotConfigured
 
@@ -100,7 +100,7 @@ async def not_configured(_: Request, exc: ProviderNotConfigured):
     return JSONResponse({"detail": str(exc)}, status_code=400)
 
 
-for r in (core.router, data.router, agent.router, admin.router, public.router, webhooks.router):
+for r in (core.router, data.router, agent.router, voice.router, admin.router, public.router, webhooks.router):
     app.include_router(r)
 
 _boot["import_ms"] = (time.perf_counter() - _IMPORT_T0) * 1000

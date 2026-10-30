@@ -26,13 +26,19 @@ You can PROPOSE these actions; nothing happens until the owner approves:
 Rules: propose only what the owner asked for or clearly implied; for questions about sales/stock/udhaar answer from the shop data with NO actions; never invent numbers - use only the shop data; reply max 2 short sentences.
 Return ONLY JSON: {"reply": "<reply in the owner's language>", "actions": [{"type": "...", ...fields}]}"""
 
-YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "ji", "yes", "yeah", "ok", "okay", "theek", "thik", "hai", "karo", "kar", "do", "dijiye",
-       "kijiye", "kardo", "karna", "approve", "approved", "confirm", "pakka", "sahi", "bilkul", "chalo", "done", "y", "👍"}
-NO = {"nahi", "nahin", "na", "no", "mat", "cancel", "ruko", "ruk", "reject", "nope", "stop", "n", "rehne", "do"}
+# Speech-to-text returns Hindi in Devanagari (Sarvam codemix) or Roman (typed / Whisper), so both scripts are recognised.
+_AFFIRM = {"haan", "han", "ha", "haa", "hanji", "haanji", "yes", "yeah", "ok", "okay", "theek", "thik", "karo", "kardo", "approve", "approved",
+           "confirm", "pakka", "bilkul", "chalo", "👍", "y", "dijiye", "kijiye",
+           "हाँ", "हां", "हा", "हाँजी", "हांजी", "ठीक", "करो", "कर", "दो", "दीजिए", "कीजिए", "ओके", "बिल्कुल", "बिलकुल", "चलो", "पक्का", "अप्रूव",
+           "कन्फर्म", "यस", "सही", "जी", "दें", "करें", "कीजिये", "दीजिये"}
+_FILLER = {"ji", "hai", "kar", "do", "karna", "sahi", "done", "है", "तो", "ना", "अभी", "please", "plz"}
+_NEGATE = {"nahi", "nahin", "mat", "cancel", "ruko", "ruk", "reject", "no", "nope", "stop", "rehne", "na",
+           "नहीं", "नही", "नहि", "मत", "रुको", "रुक", "कैंसिल", "रिजेक्ट", "नो", "स्टॉप", "रहने", "बंद"}
+_TOKEN = re.compile(r"[^\s.,!?।;:'\"()\[\]]+")
 
 
 def _words(text: str) -> list[str]:
-    return re.findall(r"[\w👍]+", text.lower())
+    return _TOKEN.findall(text.lower())
 
 
 def classify_reply(text: str) -> str | None:
@@ -40,10 +46,9 @@ def classify_reply(text: str) -> str | None:
     w = _words(text)
     if not w or len(w) > 5:
         return None
-    if any(x in ("nahi", "nahin", "mat", "cancel", "ruko", "reject", "no", "nope", "stop", "rehne") for x in w):
+    if any(x in _NEGATE for x in w):
         return "no"
-    if all(x in YES for x in w) and any(x in ("haan", "han", "ha", "haa", "hanji", "haanji", "yes", "yeah", "ok", "okay", "theek", "thik", "karo",
-                                              "kardo", "approve", "approved", "confirm", "pakka", "bilkul", "chalo", "👍", "y", "dijiye", "kijiye") for x in w):
+    if all(x in _AFFIRM or x in _FILLER for x in w) and any(x in _AFFIRM and x not in ("जी", "कर", "दो") for x in w):
         return "yes"
     return None
 

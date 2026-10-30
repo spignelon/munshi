@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Loader2, Mic, Send, Square, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { AudioLines, Loader2, Mic, Send, Square, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PlanCard } from "../components/PlanCard";
+import { VoiceMode } from "../components/VoiceMode";
 import { Card, Eyebrow, PageHeader } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { Recorder, speak, stopSpeaking } from "../lib/audio";
@@ -26,6 +27,8 @@ export default function Munshi() {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [pending, setPending] = useState<string | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(params.get("voice") === "1");
+  const closeVoice = useCallback(() => setVoiceOpen(false), []);
   const [speaking, setSpeaking] = useState(false);
   const rec = useRef<Recorder | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -75,8 +78,9 @@ export default function Munshi() {
     command.mutate({ text: v });
   };
 
-  // Deep link from the dashboard: /app/munshi?q=...&send=1
+  // Deep links: /app/munshi?voice=1 (open voice mode) and ?q=...&send=1 (send a prepared message)
   useEffect(() => {
+    if (params.get("voice") === "1") { const next = new URLSearchParams(params); next.delete("voice"); setParams(next, { replace: true }); }
     if (params.get("send") === "1" && params.get("q") && !autoSent.current) {
       autoSent.current = true;
       const q = params.get("q")!;
@@ -128,10 +132,16 @@ export default function Munshi() {
   return (
     <div className="flex min-h-[calc(100dvh-9.5rem)] flex-col lg:min-h-[calc(100dvh-6rem)]">
       <PageHeader eyebrow="Listen · Think · Act · Check" title="Munshi">
+        <button onClick={() => { stopSpeaking(); setVoiceOpen(true); }} data-testid="open-voice"
+          className="flex items-center gap-2 rounded-xl bg-saffron-500 px-4 py-2 text-sm font-semibold text-navy-900 shadow-sm hover:bg-saffron-400">
+          <AudioLines className="size-4" aria-hidden />Voice mode
+        </button>
         <button onClick={toggleVoice} aria-pressed={voiceOn} className="flex items-center gap-2 rounded-xl border border-cream-300 bg-cream-50 px-3 py-2 text-sm font-semibold hover:bg-cream-200">
           {voiceOn ? <Volume2 className="size-4 text-saffron-700" aria-hidden /> : <VolumeX className="size-4" aria-hidden />}{voiceOn ? "Munshi bolega" : "Awaaz band"}
         </button>
       </PageHeader>
+
+      {voiceOpen && <VoiceMode onClose={closeVoice} />}
 
       <div className="flex-1 space-y-4 pb-4" aria-live="polite">
         {items.length === 0 && !pending && (

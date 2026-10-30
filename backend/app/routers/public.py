@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api")
 @router.get("/health")
 def health(db: Session = Depends(get_db)):
     s = get_settings()
-    return {"ok": True, "db": DB_KIND, "mock_mode": settings_store.is_mock(db), "groq": bool(s.groq_api_key or s.groq_fake),
+    return {"ok": True, "db": DB_KIND, "mock_mode": settings_store.is_mock(db), "groq": bool(s.groq_api_key or s.groq_fake), "sarvam": bool(s.sarvam_api_key),
             "time": datetime.now(timezone.utc).isoformat()}
 
 

@@ -9,7 +9,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
-from . import settings_store
+from . import sarvam, settings_store
 
 _cache: "OrderedDict[str, tuple[bytes, str]]" = OrderedDict()
 _CACHE_MAX = 64
@@ -62,15 +62,22 @@ def synthesize(db: Session, text: str, provider: str | None = None) -> tuple[byt
         raise ValueError("empty text")
     cfg = settings_store.get_all(db)
     wanted = provider or cfg["tts_provider"]
+    use_sarvam = wanted == "sarvam" and sarvam.available(db)
     use_eleven = wanted == "elevenlabs" and bool(cfg["elevenlabs_api_key"])
     voice = cfg["edge_voice"]
-    key = hashlib.sha1(f"{'eleven' if use_eleven else 'edge'}|{voice}|{cfg['elevenlabs_voice_id']}|{text}".encode()).hexdigest()
+    which = "sarvam" if use_sarvam else "eleven" if use_eleven else "edge"
+    key = hashlib.sha1(f"{which}|{voice}|{cfg['sarvam_speaker']}|{cfg['elevenlabs_voice_id']}|{text}".encode()).hexdigest()
     if key in _cache:
         _cache.move_to_end(key)
         return _cache[key]
     used = "edge"
     audio = b""
-    if use_eleven:
+    if use_sarvam:
+        try:
+            audio, used = sarvam.synthesize(db, text), "sarvam"
+        except (sarvam.SarvamError, httpx.HTTPError):
+            audio = b""  # out of credits / rate limit / network: fall back to the free voice
+    if use_eleven and not audio:
         try:
             audio, used = _elevenlabs(text, cfg), "elevenlabs"
         except Exception:
@@ -82,3 +89,13 @@ def synthesize(db: Session, text: str, provider: str | None = None) -> tuple[byt
     while len(_cache) > _CACHE_MAX:
         _cache.popitem(last=False)
     return audio, used
+
+
+def speech_text(text: str, limit: int = 320) -> str:
+    """Trim a reply for speech (credits are metered per character): cut at a sentence end where possible."""
+    text = " ".join((text or "").split())
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "), cut.rfind("। "))
+    return cut[: end + 1] if end > limit * 0.5 else cut.rsplit(" ", 1)[0]

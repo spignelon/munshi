@@ -54,7 +54,7 @@ export default function Dashboard() {
         <p className="mt-2 max-w-3xl font-display text-xl leading-snug italic sm:text-2xl">“{SAMPLE_PROMPT}”</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button onClick={() => navigate(`/app/munshi?q=${encodeURIComponent(SAMPLE_PROMPT)}&send=1`)}><Sparkles className="size-4" aria-hidden />Yeh bhej dein</Button>
-          <Button variant="onDark" onClick={() => navigate("/app/munshi")}><Mic className="size-4" aria-hidden />Khud bolein</Button>
+          <Button variant="onDark" onClick={() => navigate("/app/munshi?voice=1")}><Mic className="size-4" aria-hidden />Voice mode</Button>
         </div>
       </Card>
 

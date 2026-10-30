@@ -7,7 +7,7 @@ import { Badge, Button, Card, ErrorNote, Eyebrow, Field, Input, PageHeader, Page
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { dateTime } from "../lib/format";
-import type { AdminSettings, AdminStatus } from "../lib/types";
+import type { AdminSettings, AdminStatus, SarvamUsage } from "../lib/types";
 
 type S = AdminSettings["settings"];
 const TABS = [["providers", "Providers", PlugZap], ["system", "System", Database], ["users", "Users", Users]] as const;
@@ -90,19 +90,46 @@ function Providers() {
         <Switch id="mock-toggle" label="Mock mode" checked={s.mock_mode} onChange={(v) => { set("mock_mode", v); save.mutate({ mock_mode: v }); }} />
       </Card>
 
-      <Card className="space-y-4 p-5 sm:p-6">
-        <div className="flex items-center justify-between"><Eyebrow>Voice · text-to-speech</Eyebrow><Mic2 className="size-5 text-saffron-700" aria-hidden /></div>
-        <div role="radiogroup" aria-label="TTS provider" className="grid gap-3 sm:grid-cols-2">
-          {([["edge", "Edge TTS (free)", "Microsoft neural Hindi voices. No key needed."], ["elevenlabs", "ElevenLabs", "Premium voices. Needs API key below; falls back to Edge if missing."]] as const).map(([k, t, d]) => (
-            <button key={k} type="button" role="radio" aria-checked={s.tts_provider === k} onClick={() => set("tts_provider", k)}
-              className={clsx("rounded-2xl border-2 p-4 text-left", s.tts_provider === k ? "border-saffron-500 bg-saffron-500/10" : "border-cream-300 bg-white hover:bg-cream-100")}>
-              <p className="font-semibold">{t}</p><p className="mt-1 text-sm text-ink-500">{d}</p></button>
-          ))}
+      <Card className="space-y-5 p-5 sm:p-6">
+        <div className="flex items-center justify-between"><Eyebrow>Voice · listening & speaking</Eyebrow><Mic2 className="size-5 text-saffron-700" aria-hidden /></div>
+
+        <Field label="Listening (speech-to-text)" hint="Sarvam Saaras is built for Indian languages and Hinglish. If it fails or credits run out, Munshi falls back to Groq Whisper automatically.">
+          {(id) => (
+            <Select id={id} value={s.stt_provider} onChange={(e) => set("stt_provider", e.target.value as S["stt_provider"])}>
+              <option value="sarvam">Sarvam Saaras (recommended)</option>
+              <option value="groq">Groq Whisper</option>
+            </Select>)}
+        </Field>
+
+        <div>
+          <p className="mb-1.5 text-sm font-semibold">Speaking (text-to-speech)</p>
+          <div role="radiogroup" aria-label="TTS provider" className="grid gap-3 sm:grid-cols-3">
+            {([["sarvam", "Sarvam Bulbul", "Natural Indian voices. Uses credits; falls back to Edge."],
+               ["edge", "Edge TTS (free)", "Microsoft neural Hindi voices. No key needed."],
+               ["elevenlabs", "ElevenLabs", "Premium voices. Needs the key below; falls back to Edge."]] as const).map(([k, t, d]) => (
+              <button key={k} type="button" role="radio" aria-checked={s.tts_provider === k} onClick={() => set("tts_provider", k)}
+                className={clsx("rounded-2xl border-2 p-4 text-left", s.tts_provider === k ? "border-saffron-500 bg-saffron-500/10" : "border-cream-300 bg-white hover:bg-cream-100")}>
+                <p className="font-semibold">{t}</p><p className="mt-1 text-sm text-ink-500">{d}</p></button>
+            ))}
+          </div>
         </div>
-        <Field label="Edge voice">{(id) => (
-          <Select id={id} value={s.edge_voice} onChange={(e) => set("edge_voice", e.target.value)}>
-            {data!.edge_voices.map((v) => <option key={v} value={v}>{v}{v.includes("Swara") ? " (female)" : " (male)"}</option>)}</Select>)}</Field>
-        {eleven && (
+
+        {(s.stt_provider === "sarvam" || s.tts_provider === "sarvam") && (
+          <div className="space-y-4 rounded-2xl bg-cream-100 p-4" data-testid="sarvam-panel">
+            <Field label="Sarvam API key" hint={s.sarvam_api_key_set ? "Key saved. Leave as-is to keep it." : "Create one at indus.sarvam.ai → Key management."}>
+              {(id) => <Input id={id} type="password" autoComplete="off" value={s.sarvam_api_key} onChange={text("sarvam_api_key")} placeholder="sk_…" />}</Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Sarvam voice">{(id) => (
+                <Select id={id} value={s.sarvam_speaker} onChange={(e) => set("sarvam_speaker", e.target.value)}>
+                  {!data!.sarvam_speakers.some((x) => x.id === s.sarvam_speaker) && <option value={s.sarvam_speaker}>{s.sarvam_speaker}</option>}
+                  {data!.sarvam_speakers.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</Select>)}</Field>
+              <Field label="Credit budget (₹)" hint="Sarvam is skipped once estimated spend (incl. GST) reaches this.">{(id) => <Input id={id} type="number" min={0} value={s.sarvam_budget_inr} onChange={text("sarvam_budget_inr")} />}</Field>
+            </div>
+            <SarvamMeter u={data!.sarvam_usage} />
+          </div>
+        )}
+
+        {s.tts_provider === "elevenlabs" && (
           <div className="space-y-4 rounded-2xl bg-cream-100 p-4">
             <Field label="ElevenLabs API key" hint={s.elevenlabs_api_key_set ? "Key saved. Leave as-is to keep it." : "From elevenlabs.io → Profile → API keys."}>
               {(id) => <Input id={id} type="password" autoComplete="off" value={s.elevenlabs_api_key} onChange={text("elevenlabs_api_key")} placeholder="sk_…" />}</Field>
@@ -112,9 +139,14 @@ function Providers() {
             </div>
           </div>
         )}
+
+        <Field label="Edge voice (free fallback)">{(id) => (
+          <Select id={id} value={s.edge_voice} onChange={(e) => set("edge_voice", e.target.value)}>
+            {data!.edge_voices.map((v) => <option key={v} value={v}>{v}{v.includes("Swara") ? " (female)" : " (male)"}</option>)}</Select>)}</Field>
+
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => preview.mutate(s.tts_provider)} loading={preview.isPending}>▶ Preview voice</Button>
-          <Button type="button" onClick={() => save.mutate({ tts_provider: s.tts_provider, edge_voice: s.edge_voice, elevenlabs_api_key: s.elevenlabs_api_key, elevenlabs_voice_id: s.elevenlabs_voice_id, elevenlabs_model: s.elevenlabs_model })} loading={save.isPending}>Save voice</Button>
+          <Button type="button" onClick={() => save.mutate({ stt_provider: s.stt_provider, tts_provider: s.tts_provider, edge_voice: s.edge_voice, sarvam_api_key: s.sarvam_api_key, sarvam_speaker: s.sarvam_speaker, sarvam_budget_inr: s.sarvam_budget_inr, elevenlabs_api_key: s.elevenlabs_api_key, elevenlabs_voice_id: s.elevenlabs_voice_id, elevenlabs_model: s.elevenlabs_model })} loading={save.isPending}>Save voice</Button>
         </div>
       </Card>
 
@@ -148,6 +180,17 @@ function Providers() {
   );
 }
 
+function SarvamMeter({ u }: { u: SarvamUsage }) {
+  const pct = u.budget_inr ? Math.min(100, (u.est_spend_inr / u.budget_inr) * 100) : 100;
+  return (
+    <div data-testid="sarvam-meter">
+      <div className="mb-1 flex justify-between text-xs text-ink-500"><span>Estimated Sarvam spend</span><span>₹{u.est_spend_inr.toFixed(2)} / ₹{u.budget_inr}</span></div>
+      <div className="h-2 overflow-hidden rounded-full bg-cream-200"><div className={clsx("h-full rounded-full", pct > 80 ? "bg-bad" : "bg-good")} style={{ width: `${pct}%` }} /></div>
+      <p className="mt-1.5 text-xs text-ink-500">{u.stt_minutes} min of speech-to-text · {u.tts_chars.toLocaleString("en-IN")} characters spoken</p>
+    </div>
+  );
+}
+
 function Bar({ used, max, label }: { used: number; max: number; label: string }) {
   const pct = Math.min(100, (used / max) * 100);
   return (<div><div className="mb-1 flex justify-between text-xs text-ink-500"><span>{label}</span><span>{used} / {max}</span></div>
@@ -169,11 +212,15 @@ function System() {
           <p className="mt-2 text-sm text-ink-500">{Object.entries(data.counts).map(([k, v]) => `${v} ${k}`).join(" · ")}</p></Card>
         <Card className="p-5"><Eyebrow>Providers</Eyebrow>
           <ul className="mt-2 space-y-1.5 text-sm">
-            {[["Groq", data.groq.configured || data.groq.fake], ["Twilio", data.twilio.configured], ["ElevenLabs", data.elevenlabs.configured]].map(([n, ok]) => (
+            {[["Groq", data.groq.configured || data.groq.fake], ["Sarvam", data.sarvam.configured], ["Twilio", data.twilio.configured], ["ElevenLabs", data.elevenlabs.configured]].map(([n, ok]) => (
               <li key={String(n)} className="flex items-center justify-between">{n}<Badge tone={ok ? "good" : "neutral"}>{ok ? "configured" : "not set"}</Badge></li>))}
             <li className="flex items-center justify-between">Mode<Badge tone={data.mock_mode ? "sim" : "good"}>{data.mock_mode ? "mock" : "live"}</Badge></li>
           </ul></Card>
       </div>
+      <Card className="space-y-3 p-5">
+        <div className="flex items-center justify-between"><Eyebrow>Sarvam credits (this deployment)</Eyebrow><Badge tone={data.sarvam.available ? "good" : "neutral"}>{data.sarvam.available ? "active" : data.sarvam.configured ? "budget reached → fallback" : "not set"}</Badge></div>
+        <SarvamMeter u={data.sarvam.usage} />
+      </Card>
       <Card className="space-y-4 p-5">
         <div className="flex items-center justify-between"><Eyebrow>Groq free-tier usage (this instance)</Eyebrow><Button size="sm" variant="ghost" onClick={() => refetch()} loading={isFetching}>Refresh</Button></div>
         {Object.entries(data.groq.usage).map(([model, u]) => (

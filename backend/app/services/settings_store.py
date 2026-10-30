@@ -8,12 +8,16 @@ from sqlalchemy.orm import Session
 from ..config import get_settings
 from ..models import AppSetting
 
-SECRET_KEYS = {"twilio_auth_token", "elevenlabs_api_key"}
+SECRET_KEYS = {"twilio_auth_token", "elevenlabs_api_key", "sarvam_api_key"}
 
 # key -> (default, env attribute on Settings or None)
 SCHEMA: dict[str, tuple[str, str | None]] = {
     "mock_mode": ("true", None),
-    "tts_provider": ("edge", None),  # edge | elevenlabs
+    "stt_provider": ("sarvam", None),  # sarvam | groq (sarvam falls back to groq on error / when unconfigured)
+    "tts_provider": ("sarvam", None),  # sarvam | edge | elevenlabs (sarvam falls back to edge)
+    "sarvam_api_key": ("", "sarvam_api_key"),
+    "sarvam_speaker": ("simran_hi_assistant", None),
+    "sarvam_budget_inr": ("85", None),  # stop using Sarvam once the *estimated* spend (incl. GST) reaches this; keeps a buffer
     "edge_voice": ("hi-IN-SwaraNeural", None),
     "elevenlabs_api_key": ("", "elevenlabs_api_key"),
     "elevenlabs_voice_id": ("", "elevenlabs_voice_id"),

@@ -7,7 +7,7 @@ from ..db import DB_KIND, get_db
 from ..models import Action, CallSession, OutboundMessage, Shop, User
 from ..auth import require_admin
 from ..serializers import iso
-from ..services import groq_client, messaging, settings_store, tts
+from ..services import groq_client, messaging, sarvam, settings_store, tts
 from .core import norm_phone
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_admin)])
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_admin)])
 def get_settings_admin(db: Session = Depends(get_db)):
     s = get_settings()
     return {"settings": settings_store.masked(db), "edge_voices": settings_store.EDGE_VOICES,
+            "sarvam_speakers": [{"id": i, "label": l} for i, l in sarvam.SPEAKERS], "sarvam_usage": sarvam.usage(db),
             "webhooks": {"base": s.public_base_url.rstrip("/"),
                          "whatsapp": f"{s.public_base_url.rstrip('/')}/api/webhooks/whatsapp",
                          "voice_inbound": f"{s.public_base_url.rstrip('/')}/api/webhooks/voice/inbound"}}
@@ -28,8 +29,16 @@ class SettingsIn(BaseModel):
 
 @router.put("/settings")
 def put_settings(body: SettingsIn, db: Session = Depends(get_db)):
-    if "tts_provider" in body.values and body.values["tts_provider"] not in ("edge", "elevenlabs"):
-        raise HTTPException(422, "tts_provider must be edge or elevenlabs")
+    if "tts_provider" in body.values and body.values["tts_provider"] not in ("sarvam", "edge", "elevenlabs"):
+        raise HTTPException(422, "tts_provider must be sarvam, edge or elevenlabs")
+    if "stt_provider" in body.values and body.values["stt_provider"] not in ("sarvam", "groq"):
+        raise HTTPException(422, "stt_provider must be sarvam or groq")
+    if "sarvam_budget_inr" in body.values:
+        try:
+            if float(body.values["sarvam_budget_inr"]) < 0:
+                raise ValueError
+        except ValueError:
+            raise HTTPException(422, "sarvam_budget_inr must be a non-negative number")
     if body.values.get("test_redirect_number"):
         body.values["test_redirect_number"] = norm_phone(str(body.values["test_redirect_number"]))
     settings_store.update(db, body.values)
@@ -46,6 +55,8 @@ def status(db: Session = Depends(get_db)):
                  "stt": groq_client.STT_MODEL, "vision": groq_client.VISION_MODEL}, "usage": groq_client.usage_snapshot()},
         "twilio": {"configured": settings_store.twilio_ready(db), "voice_number": cfg["twilio_voice_number"], "whatsapp_from": cfg["twilio_whatsapp_from"]},
         "elevenlabs": {"configured": bool(cfg["elevenlabs_api_key"])},
+        "sarvam": {"configured": bool(cfg["sarvam_api_key"]), "available": sarvam.available(db), "stt_provider": cfg["stt_provider"],
+                   "tts_provider": cfg["tts_provider"], "usage": sarvam.usage(db)},
         "mock_mode": settings_store.is_mock(db),
         "counts": {"users": db.query(User).count(), "shops": db.query(Shop).count(), "actions": db.query(Action).count(),
                    "calls": db.query(CallSession).count(), "messages": db.query(OutboundMessage).count()},

@@ -212,3 +212,14 @@ def test_admin_password_follows_environment(client, monkeypatch):
     monkeypatch.setattr(get_settings(), "admin_password", "admin12345")
     with SessionLocal() as db:
         seed.bootstrap(db)
+
+
+def test_yes_no_detection_in_both_scripts():
+    from app.services.agent import classify_reply as c
+    for t in ["haan", "Haan karo", "haan ji", "ok theek hai", "हाँ कर दो", "हाँ कर दो।", "हां", "जी हाँ", "ठीक है", "बिल्कुल", "ओके", "yes"]:
+        assert c(t) == "yes", t
+    for t in ["nahi", "nahi mat karo", "नहीं", "नहीं मत करो", "रुको", "cancel"]:
+        assert c(t) == "no", t
+    # sentences that merely contain yes-ish words are NOT approvals
+    for t in ["stock check karo", "स्टॉक चेक करो, सप्लायर को ऑर्डर दो, और उधार वापस लाओ", "ji", "कर दो", "do", "aaj ki sales kaisi rahi", "सप्लायर को ऑर्डर दो"]:
+        assert c(t) is None, t

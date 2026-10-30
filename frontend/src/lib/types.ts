@@ -53,19 +53,24 @@ export interface Dashboard {
 
 export interface AdminSettings {
   settings: {
-    mock_mode: boolean; tts_provider: "edge" | "elevenlabs"; edge_voice: string;
+    mock_mode: boolean; stt_provider: "sarvam" | "groq"; tts_provider: "sarvam" | "edge" | "elevenlabs"; edge_voice: string;
+    sarvam_api_key: string; sarvam_api_key_set: boolean; sarvam_speaker: string; sarvam_budget_inr: string;
     elevenlabs_api_key: string; elevenlabs_api_key_set: boolean; elevenlabs_voice_id: string; elevenlabs_model: string;
     twilio_account_sid: string; twilio_auth_token: string; twilio_auth_token_set: boolean; twilio_voice_number: string;
     twilio_whatsapp_from: string; test_redirect_number: string;
   };
   edge_voices: string[];
+  sarvam_speakers: { id: string; label: string }[];
+  sarvam_usage: SarvamUsage;
   webhooks: { base: string; whatsapp: string; voice_inbound: string };
 }
+export interface SarvamUsage { stt_minutes: number; tts_chars: number; est_spend_inr: number; budget_inr: number }
 export interface AdminStatus {
   db: { kind: string; persistent: boolean };
   groq: { configured: boolean; fake: boolean; models: Record<string, string>; usage: Record<string, Record<string, any>> };
   twilio: { configured: boolean; voice_number: string; whatsapp_from: string };
   elevenlabs: { configured: boolean };
+  sarvam: { configured: boolean; available: boolean; stt_provider: string; tts_provider: string; usage: SarvamUsage };
   mock_mode: boolean;
   counts: Record<string, number>;
 }

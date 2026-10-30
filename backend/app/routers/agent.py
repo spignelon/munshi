@@ -7,7 +7,7 @@ from ..auth import current_shop
 from ..db import get_db
 from ..models import AuditLog, Message, Plan, Shop
 from ..serializers import iso, plan_out
-from ..services import command, executor, groq_client, tts
+from ..services import command, executor, speech, tts
 
 router = APIRouter(prefix="/api")
 MAX_AUDIO = 4_000_000
@@ -24,10 +24,10 @@ async def agent_command(text: str = Form(default=""), audio: UploadFile | None =
             raise HTTPException(413, "Audio bahut lamba hai (max ~4MB).")
         if len(data) < 800:
             raise HTTPException(422, "Aawaz record nahi hui. Dobara try karein.")
-        transcript = groq_client.transcribe(data, audio.filename or "audio.webm")
+        transcript, _ = speech.transcribe(db, data, audio.filename or "audio.webm")
         channel = "web-voice"
     if not transcript:
-        raise HTTPException(422, "Kuch bolein ya likhein.")
+        raise HTTPException(422, "Samajh nahi aaya. Dobara boliye ya likhiye.")
     result = command.run(db, shop, transcript, channel="web")
     plan = result["plan"]
     return {"transcript": transcript, "voice": audio is not None, "reply": result["reply"], "decision": result["decision"],
@@ -91,7 +91,7 @@ class SpeakIn(BaseModel):
 @router.post("/tts/speak")
 def speak(body: SpeakIn, shop: Shop = Depends(current_shop), db: Session = Depends(get_db)):
     try:
-        audio, used = tts.synthesize(db, body.text)
+        audio, used = tts.synthesize(db, tts.speech_text(body.text))
     except ValueError:
         raise HTTPException(422, "Text khaali hai.")
     except Exception:
