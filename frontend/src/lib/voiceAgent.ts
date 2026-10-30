@@ -1,4 +1,5 @@
 import { api, ApiError } from "./api";
+import { avatarSignals } from "./avatarSignals";
 import type { Plan } from "./types";
 
 /**
@@ -93,6 +94,9 @@ export class VoiceSession {
   private audio: HTMLAudioElement | null = null;
   private state: VoiceState = "connecting";
   private muted = false;
+  private hasMic = false;
+  private playCtx?: AudioContext; //   playback-only context when there is no mic
+  private lipRaf = 0;
   private closed = false;
   private turns = 0;
 
@@ -127,11 +131,26 @@ export class VoiceSession {
     this.node = new AudioWorkletNode(this.ctx, "cap", { numberOfInputs: 1, numberOfOutputs: 0 });
     this.node.port.onmessage = (e: MessageEvent<Float32Array>) => this.onFrame(e.data);
     src.connect(this.node);
+    this.hasMic = true;
     this.lastActivity = Date.now();
     this.idleTimer = setInterval(() => {
       if (this.state === "listening" && Date.now() - this.lastActivity > IDLE_MS) this.h.onIdle();
     }, 1000);
-    this.set("listening");
+    // The mic can finish opening *after* a first typed message was already sent (dashboard shortcuts): never overwrite thinking / speaking.
+    if (this.state === "connecting") this.set("listening");
+  }
+
+  /** The state to rest in between turns: listening if the mic is live, otherwise the error state (typed messages still work). */
+  private rest(): VoiceState { return this.hasMic ? "listening" : "error"; }
+
+  /** Send a typed message through the same turn pipeline (no speech-to-text). */
+  async sendText(text: string) {
+    const t = text.trim();
+    if (!t || this.state === "thinking" || this.closed) return;
+    this.stopPlayback();
+    const form = new FormData();
+    form.append("text", t);
+    await this.submit(form);
   }
 
   setMuted(m: boolean) {
@@ -143,7 +162,7 @@ export class VoiceSession {
   /** Stop talking and listen again (tap on the orb). */
   interrupt() {
     this.stopPlayback();
-    if (this.state === "speaking") this.set("listening");
+    if (this.state === "speaking") this.set(this.rest());
   }
 
   /** Speak arbitrary text (e.g. the result of a button approval). */
@@ -162,6 +181,7 @@ export class VoiceSession {
     this.node?.disconnect();
     this.stream?.getTracks().forEach((t) => t.stop());
     void this.ctx?.close().catch(() => {});
+    void this.playCtx?.close().catch(() => {});
   }
 
   // --- audio frames / VAD -------------------------------------------------------------------------------------
@@ -215,12 +235,16 @@ export class VoiceSession {
 
   // --- server round trip ------------------------------------------------------------------------------------
   private async sendTurn(pcm: Int16Array, seconds: number) {
+    const form = new FormData();
+    form.append("audio", encodeWav(pcm), "voice.wav");
+    form.append("duration", seconds.toFixed(2));
+    await this.submit(form);
+  }
+
+  private async submit(form: FormData) {
     this.set("thinking");
     this.turns++;
     try {
-      const form = new FormData();
-      form.append("audio", encodeWav(pcm), "voice.wav");
-      form.append("duration", seconds.toFixed(2));
       const res = await api.form<TurnResult>("/voice/turn", form);
       if (this.closed) return;
       this.h.onTurn(res);
@@ -229,11 +253,11 @@ export class VoiceSession {
       if (res.audio) {
         const url = `data:${res.audio_mime || "audio/mpeg"};base64,${res.audio}`;
         await this.play(url);
-      } else this.set("listening");
+      } else this.set(this.rest());
     } catch (e) {
       if (this.closed) return;
       this.h.onError(e instanceof ApiError && e.status === 429 ? `Munshi abhi busy hai, ${e.retryAfter ?? 20}s baad dobara boliye.` : (e as Error).message);
-      this.set("listening");
+      this.set(this.rest());
     }
   }
 
@@ -241,11 +265,13 @@ export class VoiceSession {
     this.stopPlayback();
     const a = new Audio(url);
     this.audio = a;
+    this.lipSync(a);
     this.set("speaking");
     return new Promise<void>((resolve) => {
       const done = () => {
+        this.endLipSync();
         cleanup?.();
-        if (this.audio === a) { this.audio = null; if (!this.closed && this.state === "speaking") { this.lastActivity = Date.now(); this.set("listening"); } }
+        if (this.audio === a) { this.audio = null; if (!this.closed && this.state === "speaking") { this.lastActivity = Date.now(); this.set(this.rest()); } }
         resolve();
       };
       a.onended = done;
@@ -254,7 +280,54 @@ export class VoiceSession {
     });
   }
 
+  /** Analyse the reply audio as it plays so the avatar's mouth follows the real sound (loudness -> opening, spectrum -> rounding / spreading). */
+  private lipSync(a: HTMLAudioElement) {
+    try {
+      const ctx = this.ctx ?? (this.playCtx ??= new AudioContext());
+      void ctx.resume();
+      const src = ctx.createMediaElementSource(a);
+      const an = ctx.createAnalyser();
+      an.fftSize = 1024;
+      an.smoothingTimeConstant = 0.4;
+      src.connect(an);
+      an.connect(ctx.destination);
+      const time = new Float32Array(an.fftSize);
+      const freq = new Uint8Array(an.frequencyBinCount);
+      const hz = ctx.sampleRate / an.fftSize;
+      const clamp = (x: number) => Math.max(0, Math.min(1, x));
+      let env = 0;
+      avatarSignals.live = true;
+      const tick = () => {
+        if (this.audio !== a || this.closed) { this.endLipSync(); return; }
+        an.getFloatTimeDomainData(time);
+        let s = 0;
+        for (let i = 0; i < time.length; i++) s += time[i] * time[i];
+        const rms = Math.sqrt(s / time.length);
+        an.getByteFrequencyData(freq);
+        let lo = 0, mid = 0, hi = 0;
+        for (let i = 1; i < freq.length; i++) {
+          const f = i * hz;
+          if (f < 600) lo += freq[i]; else if (f < 2500) mid += freq[i]; else if (f < 6000) hi += freq[i]; else break;
+        }
+        const tot = lo + mid + hi + 1;
+        const target = clamp(Math.sqrt(Math.max(0, rms - 0.008)) * 3.2);
+        env += (target - env) * (target > env ? 0.55 : 0.22); // fast attack, slower release: reads like a jaw
+        avatarSignals.mouth = env;
+        avatarSignals.round = clamp((lo / tot - 0.33) * 2.6);
+        avatarSignals.wide = clamp((hi / tot - 0.1) * 5);
+        this.lipRaf = requestAnimationFrame(tick);
+      };
+      this.lipRaf = requestAnimationFrame(tick);
+    } catch { avatarSignals.live = false; } // the avatar falls back to a synthetic talking motion
+  }
+
+  private endLipSync() {
+    cancelAnimationFrame(this.lipRaf);
+    avatarSignals.mouth = 0; avatarSignals.round = 0; avatarSignals.wide = 0; avatarSignals.live = false;
+  }
+
   private stopPlayback() {
+    this.endLipSync();
     const a = this.audio;
     this.audio = null;
     if (a) { a.onended = null; a.onerror = null; a.pause(); }

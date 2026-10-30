@@ -42,8 +42,8 @@ test("admin: mock toggle, TTS provider, secrets masked, system status", async ({
 
   await demoLoginSwitch(page);
   await sendToMunshi(page, FULL_PLAN);
-  await page.getByRole("button", { name: "Haan, karo" }).click();
-  await expect(page.getByText(/Twilio is not configured/).first()).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("voice-plan").getByRole("button", { name: "Haan, karo" }).click();
+  await expect(page.getByTestId("voice-plan")).toContainText(/Twilio is not configured/, { timeout: 30_000 });
 
   // back to mock → works again
   await adminLoginAgain(page);
@@ -55,6 +55,7 @@ async function demoLoginSwitch(page: import("@playwright/test").Page) {
 }
 
 async function adminLoginAgain(page: import("@playwright/test").Page) {
+  await page.goto("/app"); // leave the full-screen voice screen: it covers the sidebar
   await page.getByRole("button", { name: "Log out" }).click();
   await adminLogin(page);
   await page.goto("/app/admin");

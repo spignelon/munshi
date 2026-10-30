@@ -1,4 +1,5 @@
-"""Hands-free voice mode: one request per spoken turn (speech in -> plan / approval -> speech out)."""
+"""Voice mode: one request per turn (speech in -> plan / approval -> speech out).
+A typed message (`text`) takes the same path minus speech-to-text, so the voice screen also serves typed fallbacks and shortcuts."""
 import base64
 import time
 
@@ -17,16 +18,21 @@ MIN_AUDIO = 3_000  # ~0.1 s of 16 kHz WAV: anything smaller is a click, not spee
 
 
 @router.post("/turn")
-def voice_turn(audio: UploadFile = File(...), duration: float | None = Form(default=None),
+def voice_turn(audio: UploadFile | None = File(default=None), text: str = Form(default=""), duration: float | None = Form(default=None),
                shop: Shop = Depends(current_shop), db: Session = Depends(get_db)):
-    data = audio.file.read(MAX_AUDIO + 1)
-    if len(data) > MAX_AUDIO:
-        raise HTTPException(413, "Audio bahut lamba hai.")
-    if len(data) < MIN_AUDIO:
-        return {"empty": True, "transcript": ""}
-
     t0 = time.perf_counter()
-    transcript, stt_provider = speech.transcribe(db, data, audio.filename or "voice.wav", duration)
+    typed = text.strip()[:600]
+    if typed:
+        transcript, stt_provider = typed, None
+    elif audio is not None:
+        data = audio.file.read(MAX_AUDIO + 1)
+        if len(data) > MAX_AUDIO:
+            raise HTTPException(413, "Audio bahut lamba hai.")
+        if len(data) < MIN_AUDIO:
+            return {"empty": True, "transcript": ""}
+        transcript, stt_provider = speech.transcribe(db, data, audio.filename or "voice.wav", duration)
+    else:
+        raise HTTPException(422, "Audio ya text bhejiye.")
     t1 = time.perf_counter()
     if not transcript:  # silence / not understood: no planning, no TTS, no credits spent on a reply
         return {"empty": True, "transcript": "", "stt": stt_provider, "timings": {"stt_ms": round((t1 - t0) * 1000)}}

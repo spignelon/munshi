@@ -1,14 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Check, Mic, MicOff, PhoneOff, ShieldCheck, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Keyboard, Mic, MicOff, PhoneOff, Send, ShieldCheck, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { inr } from "../lib/format";
 import type { Plan } from "../lib/types";
+import { avatarSignals } from "../lib/avatarSignals";
 import { VoiceSession, type TurnResult, type VoiceState } from "../lib/voiceAgent";
+import { Avatar } from "./Avatar";
 import { actionIcon } from "./PlanCard";
-import { Button } from "./ui";
+import { Button, Input } from "./ui";
 
 const STATUS: Record<VoiceState, { title: string; hint: string }> = {
   connecting: { title: "Mic shuru ho raha hai…", hint: "Browser mein mic ki permission allow karein" },
@@ -20,7 +22,7 @@ const STATUS: Record<VoiceState, { title: string; hint: string }> = {
 };
 
 /** Full-screen, hands-free voice conversation (ChatGPT-voice style). */
-export function VoiceMode({ onClose }: { onClose: () => void }) {
+export function VoiceMode({ onClose, initialText }: { onClose: () => void; initialText?: string }) {
   const qc = useQueryClient();
   const sessionRef = useRef<VoiceSession | null>(null);
   const orbRef = useRef<HTMLButtonElement>(null);
@@ -33,6 +35,8 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
   const [providers, setProviders] = useState<TurnResult["providers"]>();
   const [busy, setBusy] = useState(false);
   const [fatal, setFatal] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [draft, setDraft] = useState("");
 
   const refresh = useCallback(() => { qc.invalidateQueries(); }, [qc]);
 
@@ -40,7 +44,7 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
     let cancelled = false;
     const s = new VoiceSession({
       onState: (st) => !cancelled && setState(st),
-      onLevel: (l) => orbRef.current?.style.setProperty("--lvl", l.toFixed(3)),
+      onLevel: (l) => { avatarSignals.user = l; orbRef.current?.style.setProperty("--lvl", l.toFixed(3)); },
       onTurn: (r) => {
         if (cancelled) return;
         if (r.empty) { setNotice("Samajh nahi aaya, dobara boliye."); return; }
@@ -59,10 +63,13 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
     s.start().catch((e: Error) => {
       if (cancelled) return;
       setState("error");
-      setFatal(e.name === "NotAllowedError" ? "Mic ki permission chahiye. Browser ke address bar mein mic allow karke dobara try karein." : e.message);
+      setTyping(true); // no mic: typing still works
+      setFatal((e.name === "NotAllowedError" ? "Mic ki permission chahiye (browser ke address bar mein allow karein). " : `${e.message} `) + "Tab tak neeche type karke bhi bata sakte hain.");
     });
-    return () => { cancelled = true; s.stop(); };
-  }, [onClose, refresh]);
+    // a prepared message (dashboard shortcuts) is sent as the first turn; the timer keeps StrictMode's double-mount from sending twice
+    const first = initialText ? setTimeout(() => { void s.sendText(initialText); }, 0) : undefined;
+    return () => { cancelled = true; clearTimeout(first); s.stop(); };
+  }, [onClose, refresh, initialText]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -86,10 +93,19 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  const sendDraft = (e: FormEvent) => {
+    e.preventDefault();
+    const t = draft.trim();
+    if (!t || state === "thinking") return;
+    setDraft("");
+    void sessionRef.current?.sendText(t);
+  };
+
   const toggleMute = () => { const m = !muted; setMuted(m); sessionRef.current?.setMuted(m); };
   const pending = plan && plan.status === "proposed" && plan.actions.some((a) => a.status === "proposed");
   const st = STATUS[state];
   const live = state === "hearing" || state === "listening";
+  const idleMuted = muted && live; // mute only matters while she is waiting for you; thinking / speaking states still show
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Munshi voice mode" data-testid="voice-mode" data-state={state}
@@ -106,22 +122,29 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
       </header>
 
       <main className="relative flex flex-1 flex-col items-center px-5 pb-4">
-        <div className="mt-2 grid place-items-center sm:mt-8">
-          <button type="button" onClick={() => sessionRef.current?.interrupt()} aria-label={state === "speaking" ? "Munshi ko roken" : "Voice orb"} disabled={state !== "speaking"}
-            ref={orbRef} style={{ ["--lvl" as string]: 0 }}
-            className="relative grid size-40 place-items-center rounded-full sm:size-64 focus-visible:outline-offset-8">
-            {(live || state === "speaking") && <span className="orb-ring absolute inset-0 rounded-full bg-saffron-500/25" aria-hidden />}
-            <span className={clsx("absolute inset-4 rounded-full bg-gradient-to-br sm:inset-6 from-saffron-400 to-saffron-600 shadow-[0_0_80px_rgba(232,145,45,0.45)]",
-              state === "speaking" && "orb-speak", state === "thinking" && "orb-think", live && "orb-live")} aria-hidden />
-            {state === "thinking" && <span className="absolute inset-2 animate-spin rounded-full border-4 border-transparent border-t-saffron-400/80" aria-hidden />}
-            <span className="relative text-navy-900">{muted ? <MicOff className="size-10" aria-hidden /> : <Mic className="size-10" aria-hidden />}</span>
+        <div className="mt-2 grid place-items-center sm:mt-6">
+          <button type="button" onClick={() => sessionRef.current?.interrupt()} aria-label={state === "speaking" ? "Munshi ko roken" : "Munshi"} disabled={state !== "speaking"}
+            ref={orbRef} style={{ ["--lvl" as string]: 0 }} data-testid="avatar-frame"
+            className="relative grid size-52 place-items-center rounded-full sm:size-72 focus-visible:outline-offset-8">
+            <span className={clsx("avatar-halo absolute -inset-3 rounded-full bg-saffron-500/20 transition-opacity", live || state === "speaking" ? "opacity-100" : "opacity-40")} aria-hidden />
+            <span className="relative block size-full overflow-hidden rounded-full border-4 border-saffron-500/80 bg-[radial-gradient(circle_at_50%_30%,#34457a,#111b33_72%)] shadow-[0_0_70px_rgba(232,145,45,0.35)]">
+              <Avatar state={state} muted={muted} />
+            </span>
+            {state === "thinking" && (
+              <span className="absolute -top-1 -right-3 flex items-center gap-1.5 rounded-full bg-cream-50 px-3.5 py-2.5 shadow-lg sm:-right-8" role="status" aria-label="Munshi soch rahi hai" data-testid="avatar-thinking">
+                {[0, 1, 2].map((i) => <span key={i} className="dot size-2 rounded-full bg-saffron-600" style={{ animationDelay: `${i * 0.15}s` }} />)}
+              </span>
+            )}
+            <span className={clsx("absolute right-1 bottom-2 grid size-9 place-items-center rounded-full border-2 border-navy-950 sm:right-3 sm:bottom-3 sm:size-10", muted ? "bg-cream-50 text-navy-900" : "bg-saffron-500 text-navy-900")} aria-hidden>
+              {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+            </span>
           </button>
         </div>
 
         <p className="mt-5 text-center font-display text-2xl font-semibold sm:mt-7 sm:text-3xl" role="status" aria-live="polite" data-testid="voice-status">
-          {muted ? "Mic mute hai" : st.title}
+          {idleMuted ? "Mic mute hai" : st.title}
         </p>
-        <p className="mt-1.5 min-h-5 text-center text-sm text-cream-200/60">{fatal || notice || (muted ? "Unmute karke boliye" : st.hint)}</p>
+        <p className="mt-1.5 min-h-5 text-center text-sm text-cream-200/60">{fatal || notice || (idleMuted ? "Unmute karke boliye" : st.hint)}</p>
 
         <div className="mt-5 w-full max-w-xl space-y-3 text-center" aria-live="polite">
           {heard && <p className="text-lg text-cream-200/70 italic" data-testid="voice-heard">“{heard}”</p>}
@@ -140,7 +163,9 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
                     <Icon className="mt-0.5 size-4 shrink-0 text-saffron-400" aria-hidden />
                     <span className="min-w-0 flex-1">{a.title}
                       {a.blocked_reason && <span className="mt-0.5 block text-xs text-red-300">{a.blocked_reason}</span>}
-                      {a.status === "done" && a.type === "supplier_order" && <span className="mt-0.5 block text-xs text-emerald-300">{inr(a.result.final_amount)} · {a.result.discount_pct}% chhoot · {a.result.eta}</span>}
+                      {a.status === "done" && a.type === "supplier_order" && <span className="mt-0.5 block text-xs text-emerald-300">{inr(a.result.final_amount)} · {a.result.discount_pct}% chhoot · {a.result.eta} · {a.result.order_ref}</span>}
+                      {a.status === "done" && a.type === "udhaar_reminders" && <span className="mt-0.5 block text-xs text-emerald-300">{a.result.sent} reminders bheje{a.result.recovered_simulated ? ` · ${inr(a.result.recovered_simulated)} wapas aaya (simulated)` : ""}</span>}
+                      {a.status === "failed" && a.result.error && <span className="mt-0.5 block text-xs text-red-300">{a.result.error}</span>}
                     </span>
                     <span className={clsx("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", a.status === "done" ? "bg-emerald-400/20 text-emerald-300" : a.status === "proposed" ? "bg-saffron-500/20 text-saffron-300" : "bg-cream-200/10 text-cream-200/70")}>{a.status}</span>
                   </li>
@@ -160,15 +185,30 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
         )}
       </main>
 
+      <div className="sticky bottom-0 z-10 bg-navy-950/90 backdrop-blur">
+      {typing && (
+        <form onSubmit={sendDraft} className="relative mx-auto flex w-full max-w-xl items-center gap-2 px-5 pb-2">
+          <Input aria-label="Type to Munshi" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Yahan likhiye…" autoComplete="off"
+            className="border-cream-200/20 bg-navy-900 text-cream-50 placeholder:text-cream-200/40" />
+          <button type="submit" aria-label="Send" disabled={!draft.trim() || state === "thinking"}
+            className="grid size-12 shrink-0 place-items-center rounded-xl bg-saffron-500 text-navy-900 hover:bg-saffron-400 disabled:opacity-50"><Send className="size-5" aria-hidden /></button>
+        </form>
+      )}
+
       <footer className="relative flex items-center justify-center gap-4 px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <button onClick={toggleMute} aria-pressed={muted} aria-label={muted ? "Unmute mic" : "Mute mic"}
           className={clsx("grid size-14 place-items-center rounded-full transition", muted ? "bg-cream-50 text-navy-900" : "bg-navy-800 text-cream-50 hover:bg-navy-700")}>
           {muted ? <MicOff className="size-6" aria-hidden /> : <Mic className="size-6" aria-hidden />}
         </button>
+        <button onClick={() => setTyping((v) => !v)} aria-pressed={typing} aria-label="Type a message"
+          className={clsx("grid size-14 place-items-center rounded-full transition", typing ? "bg-cream-50 text-navy-900" : "bg-navy-800 text-cream-50 hover:bg-navy-700")}>
+          <Keyboard className="size-6" aria-hidden />
+        </button>
         <button onClick={onClose} aria-label="End voice mode" className="flex h-14 items-center gap-2 rounded-full bg-bad px-6 font-semibold text-white hover:bg-red-700">
           <PhoneOff className="size-5" aria-hidden />End
         </button>
       </footer>
+      </div>
     </div>
   );
 }

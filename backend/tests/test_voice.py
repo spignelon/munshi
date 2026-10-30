@@ -137,3 +137,17 @@ def test_admin_validates_and_masks_sarvam(client, admin, sarvam_on):
     s = client.get("/api/admin/settings", headers=admin).json()
     assert s["settings"]["sarvam_api_key"] == "••••-key" and "test-key" not in str(s)
     assert any(x["id"] == "simran_hi_assistant" for x in s["sarvam_speakers"])
+
+
+def test_typed_turn_skips_speech_to_text(client, merchant, sarvam_on):
+    fake, _ = sarvam_on
+    r = client.post("/api/voice/turn", data={"text": "supplier ko stock order do"}, headers=merchant)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["transcript"] == "supplier ko stock order do" and d["providers"]["stt"] is None and d["providers"]["tts"] == "sarvam"
+    assert "/speech-to-text" not in fake.calls  # no STT credits for typed input
+    assert any(a["type"] == "supplier_order" for a in d["plan"]["actions"])
+    # typed "haan" approves the pending plan through the same endpoint
+    d2 = client.post("/api/voice/turn", data={"text": "haan"}, headers=merchant).json()
+    assert d2["decision"] == "approved"
+    assert client.post("/api/voice/turn", headers=merchant).status_code == 422  # neither audio nor text

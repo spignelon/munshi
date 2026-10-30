@@ -24,8 +24,19 @@ export async function adminLogin(page: Page) {
   await expect(page).toHaveURL(/\/app/);
 }
 
+/** Opens Munshi's voice screen and sends `text` as the first turn. The mic is muted right away: in tests Chromium's fake
+ *  microphone loops a Hindi clip, which would otherwise start extra voice turns. */
 export async function sendToMunshi(page: Page, text: string) {
-  await page.goto("/app/munshi");
-  await page.getByLabel("Munshi ko likhein").fill(text);
-  await page.getByRole("button", { name: "Send" }).click();
+  await page.goto(`/app/munshi?q=${encodeURIComponent(text)}&send=1`);
+  await expect(page.getByTestId("voice-mode")).toBeVisible();
+  await page.getByRole("button", { name: "Mute mic" }).click();
+  await expect(page.getByTestId("voice-reply")).toBeVisible({ timeout: 45_000 });
+}
+
+/** Total udhaar from the API (what the ledger page shows), read with the logged-in token. */
+export async function ledgerTotal(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    const r = await fetch("/api/udhaar", { headers: { Authorization: `Bearer ${localStorage.getItem("munshi.token")}` } });
+    return Math.round((await r.json()).total);
+  });
 }

@@ -4,6 +4,7 @@ import { demoLogin } from "./helpers";
 const routes = ["/app", "/app/munshi", "/app/activity", "/app/udhaar", "/app/stock", "/app/customers", "/app/suppliers", "/app/settings"];
 
 test("no horizontal overflow on any page; navigation fits the viewport", async ({ page }, info) => {
+  test.setTimeout(150_000); // eight pages in a row (the Munshi page also starts the mic + voice detection)
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await demoLogin(page, false);

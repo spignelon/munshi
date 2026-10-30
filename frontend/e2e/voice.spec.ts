@@ -6,8 +6,7 @@ import { demoLogin } from "./helpers";
 test.beforeEach(async ({ page }) => { await demoLogin(page); });
 
 test("voice mode: listens, detects the end of speech, plans, and approves from inside the overlay", async ({ page }) => {
-  await page.goto("/app/munshi");
-  await page.getByTestId("open-voice").click();
+  await page.goto("/app/munshi"); // voice is the default Munshi screen: it opens listening immediately
   const vm = page.getByTestId("voice-mode");
   await expect(vm).toBeVisible();
   await expect(page.getByTestId("voice-status")).toContainText(/sun raha|Boliye|Soch raha|bol raha/i);
@@ -26,20 +25,25 @@ test("voice mode: listens, detects the end of speech, plans, and approves from i
 
   await page.getByRole("button", { name: "End voice mode" }).click();
   await expect(vm).toHaveCount(0);
+  await expect(page).toHaveURL(/\/app$/); // leaving voice returns to the dashboard
 
-  // the spoken turn is part of the normal conversation history
-  await page.goto("/app/munshi");
+  // the spoken turn is recorded in Activity with the approval that followed it
+  await page.goto("/app/activity");
   await expect(page.getByText(/Stock check karo/).first()).toBeVisible();
+  await expect(page.getByText(/Approved via web/).first()).toBeVisible();
 });
 
-test("dashboard 'Voice mode' opens the overlay directly; Escape closes it", async ({ page }) => {
+test("the Munshi tab is the voice screen; Escape returns to the dashboard", async ({ page }) => {
   await page.goto("/app");
   await page.getByRole("button", { name: "Voice mode" }).click();
   await expect(page).toHaveURL(/\/app\/munshi/);
   await expect(page.getByTestId("voice-mode")).toBeVisible();
-  await expect(page).not.toHaveURL(/voice=1/); // param is consumed so a refresh doesn't reopen it
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("voice-mode")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/app$/);
+  // no chat view any more: there is no message list or composer on the Munshi route
+  await page.goto("/app/munshi");
+  await expect(page.getByLabel("Munshi ko likhein")).toHaveCount(0);
 });
 
 test("mic permission denied shows a clear message instead of a dead screen", async ({ browser }) => {
@@ -49,8 +53,12 @@ test("mic permission denied shows a clear message instead of a dead screen", asy
   });
   const page = await ctx.newPage();
   await demoLogin(page, false);
-  await page.goto("/app/munshi?voice=1");
+  await page.goto("/app/munshi");
   await expect(page.getByTestId("voice-mode")).toHaveAttribute("data-state", "error");
   await expect(page.getByText(/Mic ki permission chahiye/)).toBeVisible();
+  // typing is offered automatically, so the screen is never a dead end
+  await page.getByLabel("Type to Munshi").fill("loan chahiye");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByTestId("voice-plan")).toContainText("loan");
   await ctx.close();
 });

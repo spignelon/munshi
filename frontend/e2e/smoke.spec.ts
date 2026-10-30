@@ -12,13 +12,13 @@ test("health endpoint reports the stack", async ({ request }) => {
   expect(j.groq).toBe(true);
 });
 
-test("demo login → full-plan command → plan → approve (simulated)", async ({ page }) => {
+test("demo login → voice screen with a typed request → plan → approve (simulated)", async ({ page }) => {
   await demoLogin(page);
   await expect(page.getByText("₹38,000").first()).toBeVisible();
-  await sendToMunshi(page, FULL_PLAN);
-  const card = page.getByTestId("plan-card").first();
-  await expect(card).toContainText("Shree Foods Distributors", { timeout: 45_000 });
-  await page.getByRole("button", { name: "Haan, karo" }).click();
-  await expect(page.getByText(/MUN-\d+/).first()).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("Simulated").first()).toBeVisible();
+  await sendToMunshi(page, FULL_PLAN); // typed through the voice screen (no speech credits); the fake mic is muted
+  const plan = page.getByTestId("voice-plan");
+  await expect(plan).toContainText("Shree Foods Distributors", { timeout: 45_000 });
+  await plan.getByRole("button", { name: "Haan, karo" }).click();
+  await expect(plan).toContainText(/MUN-\d+/, { timeout: 60_000 });
+  await expect(plan).toContainText("simulated");
 });
