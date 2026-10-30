@@ -25,6 +25,11 @@ def verify(text: str, sig: str, voice: str = "") -> bool:
     return hmac.compare_digest(sign(text, voice), sig or "")
 
 
+def cap_token(path: str, ref: str = "") -> str:
+    """Secret-derived token appended to play-only webhook URLs we hand to Twilio ourselves (?k=...)."""
+    return sign(f"{path}|{ref}", "webhook")
+
+
 def signed_url(text: str) -> str:
     from urllib.parse import quote
     text = text[:MAX_CHARS]

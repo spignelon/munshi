@@ -133,9 +133,11 @@ def test_reminder_call_real_mode_is_redirected_and_capped(client, merchant, admi
         assert calls[0]["to"] == "+919000000001" and "/api/webhooks/voice/message?m=" in calls[0]["url"]
         assert all(m["to"] == "whatsapp:+919000000001" for m in msgs)
         assert rem["status"] == "done"
-        m_id = int(calls[0]["url"].rsplit("=", 1)[1])
-        r = client.post(f"/api/webhooks/voice/message?m={m_id}", data={}, headers={"X-Twilio-Signature": "x"})
-        assert r.status_code == 403  # real mode: unsigned webhook rejected
+        url = calls[0]["url"]
+        m_id = int(url.split("m=")[1].split("&")[0])
+        assert client.post(f"/api/webhooks/voice/message?m={m_id}", data={}, headers={"X-Twilio-Signature": "x"}).status_code == 403  # unsigned
+        assert client.post(f"/api/webhooks/voice/message?m={m_id}&k=nope", data={}).status_code == 403  # forged token
+        assert client.post("/api/webhooks/voice/message?" + url.split("?")[1], data={}).status_code == 200  # our own capability URL
     finally:
         client.put("/api/admin/settings", json={"values": {"mock_mode": True, "reminder_channel": "whatsapp", "test_redirect_number": ""}}, headers=admin)
 

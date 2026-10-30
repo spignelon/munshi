@@ -108,7 +108,7 @@ def test_call(body: CallTestIn, db: Session = Depends(get_db)):
         if not cfg["twilio_voice_number"]:
             raise messaging.ProviderNotConfigured("Twilio voice number is not set.")
         base = get_settings().public_base_url.rstrip("/")
-        call = client.calls.create(to=norm_phone(body.to), from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/test")
+        call = client.calls.create(to=norm_phone(body.to), from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/test?k={tts.cap_token('/api/webhooks/voice/test')}")
         return {"status": "queued", "simulated": False, "error": "", "sid": call.sid}
     except Exception as e:  # noqa: BLE001
         return {"status": "failed", "simulated": False, "error": str(e)[:300]}

@@ -1,4 +1,5 @@
 """Twilio webhooks: WhatsApp (sandbox) and voice (supplier calls + inbound calls to Munshi)."""
+import hmac
 import json
 import re
 from urllib.parse import urlencode
@@ -22,8 +23,11 @@ def _xml(resp) -> Response:
     return Response(str(resp), media_type="application/xml")
 
 
-async def _form(request: Request, db: Session) -> dict:
-    """Parse the form and verify Twilio's signature (skipped only in mock mode without an auth token)."""
+async def _form(request: Request, db: Session, cap_ref: str | None = None) -> dict:
+    """Parse the form and verify Twilio's signature (skipped only in mock mode without an auth token).
+
+    cap_ref (play-only endpoints we call Twilio with ourselves): a valid ?k= token for this path+ref is accepted when the signature check fails.
+    The failure is still logged so the mismatch can be diagnosed."""
     form = dict((await request.form()).items())
     token = settings_store.get(db, "twilio_auth_token")
     if settings_store.is_mock(db) and not token:
@@ -38,6 +42,8 @@ async def _form(request: Request, db: Session) -> dict:
         print(json.dumps({"twilio_sig_fail": {"url": url, "ctype": request.headers.get("content-type", ""), "fields": sorted(form),
                                               "got": sig[:6], "want": validator.compute_signature(url, form)[:6],
                                               "host": request.headers.get("host", ""), "proto": request.headers.get("x-forwarded-proto", "")}}))
+        if cap_ref is not None and hmac.compare_digest(tts.cap_token(request.url.path, cap_ref), request.query_params.get("k", "")):
+            return form
         raise HTTPException(403, "Invalid Twilio signature")
     return form
 
@@ -249,7 +255,7 @@ async def voice_inbound_turn(shop: int, request: Request, db: Session = Depends(
 @router.post("/voice/message")
 async def voice_message(m: int, request: Request, db: Session = Depends(get_db)):
     """One-way spoken message (udhaar reminder etc.): play the stored text, then hang up."""
-    await _form(request, db)
+    await _form(request, db, cap_ref=str(m))
     msg = db.get(OutboundMessage, m)
     resp = VoiceResponse()
     if not msg or msg.channel != "call":
@@ -261,8 +267,8 @@ async def voice_message(m: int, request: Request, db: Session = Depends(get_db))
 
 @router.post("/voice/test")
 async def voice_test(request: Request, db: Session = Depends(get_db)):
-    await _form(request, db)
+    await _form(request, db, cap_ref="")
     resp = VoiceResponse()
-    _play(resp, "Namaste! Yeh Munshi ki test call hai. Aapka Twilio connection sahi kaam kar raha hai. Dhanyavaad.")
+    _play(resp, "नमस्ते! मैं मुंशी बोल रही हूँ। यह एक टेस्ट कॉल है। आपका ट्विलियो कनेक्शन और सरवम की आवाज़ बिल्कुल ठीक काम कर रही है। धन्यवाद!")
     resp.hangup()
     return _xml(resp)
