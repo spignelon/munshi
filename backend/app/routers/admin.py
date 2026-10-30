@@ -33,6 +33,8 @@ def put_settings(body: SettingsIn, db: Session = Depends(get_db)):
         raise HTTPException(422, "tts_provider must be sarvam, edge or elevenlabs")
     if "stt_provider" in body.values and body.values["stt_provider"] not in ("sarvam", "groq"):
         raise HTTPException(422, "stt_provider must be sarvam or groq")
+    if "reminder_channel" in body.values and body.values["reminder_channel"] not in ("whatsapp", "call", "both"):
+        raise HTTPException(422, "reminder_channel must be whatsapp, call or both")
     if "sarvam_budget_inr" in body.values:
         try:
             if float(body.values["sarvam_budget_inr"]) < 0:

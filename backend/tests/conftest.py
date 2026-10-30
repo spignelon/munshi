@@ -8,6 +8,8 @@ os.environ["GROQ_API_KEY"] = ""
 os.environ["USE_TURSO"] = "0"
 os.environ["PUBLIC_BASE_URL"] = "http://testserver"
 os.environ["CRON_SECRET"] = "cronsecret"
+for _k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_VOICE_NUMBER", "TEST_REDIRECT_NUMBER", "SARVAM_API_KEY"):
+    os.environ[_k] = ""  # never let real provider credentials from backend/.env leak into tests
 
 import itertools  # noqa: E402
 

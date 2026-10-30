@@ -11,7 +11,7 @@ from twilio.twiml.voice_response import VoiceResponse
 
 from ..config import get_settings
 from ..db import get_db
-from ..models import Action, CallSession, Plan, Shop
+from ..models import Action, CallSession, OutboundMessage, Plan, Shop
 from ..services import agent, command, executor, groq_client, ocr, settings_store, speech, telephony, tts
 
 router = APIRouter(prefix="/api/webhooks")
@@ -236,6 +236,19 @@ async def voice_inbound_turn(shop: int, request: Request, db: Session = Depends(
     except groq_client.GroqBusy:
         _play(resp, "Munshi abhi busy hai, thodi der baad call karein.")
         resp.hangup()
+    return _xml(resp)
+
+
+@router.post("/voice/message")
+async def voice_message(m: int, request: Request, db: Session = Depends(get_db)):
+    """One-way spoken message (udhaar reminder etc.): play the stored text, then hang up."""
+    await _form(request, db)
+    msg = db.get(OutboundMessage, m)
+    resp = VoiceResponse()
+    if not msg or msg.channel != "call":
+        raise HTTPException(404, "message not found")
+    _play(resp, msg.body)
+    resp.hangup()
     return _xml(resp)
 
 

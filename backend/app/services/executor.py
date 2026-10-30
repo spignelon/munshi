@@ -8,6 +8,7 @@ from ..models import (Action, AuditLog, Approval, CallSession, Customer, Plan, P
 from . import business, guardrails, messaging, payments, settings_store, telephony
 
 TEST_MODE_CAP = 3  # real mode + redirect number: don't spam one phone with 41 copies
+CALL_TEST_CAP = 1  # ...and phone calls burn trial minutes, so only one reminder call per action while redirected
 
 
 def audit(db: Session, shop: Shop, event: str, ref: str = "", actor: str = "munshi", **detail):
@@ -117,16 +118,36 @@ def _recipients(db: Session, a: Action, mock: bool) -> list[dict]:
     return cust
 
 
+def _reminder_speech(shop: Shop, name: str, amount: float, with_link: bool) -> str:
+    link = " Payment ka link aapko WhatsApp par bhej diya hai." if with_link else ""
+    return (f"Namaste {name} ji. Main {shop.name} ki taraf se Munshi bol raha hoon. Aapke {int(amount)} rupaye ka udhaar baaki hai. "
+            f"Kripya jaldi chuka dein.{link} Dhanyavaad.")
+
+
 def _udhaar_reminders(db: Session, shop: Shop, a: Action, mock: bool) -> None:
-    sent = failed = 0
+    sent = failed = calls = 0
     recovered = 0.0
     first_error = ""
+    channel = settings_store.get(db, "reminder_channel")
+    redirected = not mock and bool(settings_store.get(db, "test_redirect_number").strip())
     for c in _recipients(db, a, mock):
         cust = db.get(Customer, c["id"])
         link = payments.make_link(db, shop, cust, c["amount"])
         body = (f"Namaste {c['name'].split()[0]} ji 🙏 {shop.name} se. Aapka ₹{int(c['amount']):,} baaki hai. "
                 f"Is link se UPI/Paytm se chuka sakte hain: {link}\nDhanyavaad!")
-        m = messaging.send_whatsapp(db, shop, to=c["phone"], body=body, recipient_name=c["name"], customer_id=c["id"], action_id=a.id)
+        over_call_cap = redirected and calls >= CALL_TEST_CAP
+        if channel == "call" and over_call_cap:
+            continue
+        if channel in ("call", "both") and not over_call_cap:
+            cm = messaging.place_voice_message(db, shop, to=c["phone"], text=_reminder_speech(shop, c["name"].split()[0], c["amount"], channel == "both"),
+                                               recipient_name=c["name"], customer_id=c["id"], action_id=a.id)
+            calls += 1
+            if channel == "call":
+                m = cm
+            elif cm.status == "failed":
+                first_error = first_error or cm.error
+        if channel != "call":
+            m = messaging.send_whatsapp(db, shop, to=c["phone"], body=body, recipient_name=c["name"], customer_id=c["id"], action_id=a.id)
         if m.status == "sent":
             sent += 1
             if cust:
@@ -138,7 +159,7 @@ def _udhaar_reminders(db: Session, shop: Shop, a: Action, mock: bool) -> None:
         else:
             failed += 1
             first_error = first_error or m.error
-    a.result = {"sent": sent, "failed": failed, "requested": a.payload["total"], "recovered_simulated": recovered,
+    a.result = {"sent": sent, "failed": failed, "calls": calls, "channel": channel, "requested": a.payload["total"], "recovered_simulated": recovered,
                 "capped_for_test": (not mock) and len(a.payload["customers"]) > len(_recipients(db, a, mock))}
     _finish_messaging(a, sent, failed, first_error)
 

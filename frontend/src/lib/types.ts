@@ -57,7 +57,7 @@ export interface AdminSettings {
     sarvam_api_key: string; sarvam_api_key_set: boolean; sarvam_speaker: string; sarvam_budget_inr: string;
     elevenlabs_api_key: string; elevenlabs_api_key_set: boolean; elevenlabs_voice_id: string; elevenlabs_model: string;
     twilio_account_sid: string; twilio_auth_token: string; twilio_auth_token_set: boolean; twilio_voice_number: string;
-    twilio_whatsapp_from: string; test_redirect_number: string;
+    twilio_whatsapp_from: string; test_redirect_number: string; reminder_channel: "whatsapp" | "call" | "both";
   };
   edge_voices: string[];
   sarvam_speakers: { id: string; label: string }[];

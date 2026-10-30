@@ -81,3 +81,72 @@ def test_twilio_signature_enforced_when_real(client, admin):
         with SessionLocal() as db:
             db.query(AppSetting).filter(AppSetting.key == "twilio_auth_token").delete()
             db.commit()
+
+
+class FakeTwilio:
+    """Stands in for twilio.rest.Client: records every call/message instead of hitting the network."""
+    sent: list = []
+
+    def __init__(self):
+        outer = self
+
+        class _Calls:
+            def create(self, **kw):
+                outer.sent.append(("call", kw))
+                return type("C", (), {"sid": f"CA{len(outer.sent)}"})()
+
+        class _Msgs:
+            def create(self, **kw):
+                outer.sent.append(("msg", kw))
+                return type("M", (), {"sid": f"SM{len(outer.sent)}"})()
+
+        self.calls, self.messages = _Calls(), _Msgs()
+
+
+def _approve(client, h, utterance="udhaar wapas lao"):
+    plan = client.post("/api/agent/command", data={"text": utterance}, headers=h).json()["plan"]
+    return client.post(f"/api/plans/{plan['id']}/decision", json={"approve": True}, headers=h).json()["plan"]
+
+
+def test_reminder_by_call_mock_mode(client, merchant, admin):
+    client.put("/api/admin/settings", json={"values": {"reminder_channel": "both"}}, headers=admin)
+    try:
+        rem = next(a for a in _approve(client, merchant)["actions"] if a["type"] == "udhaar_reminders")
+        assert rem["status"] == "done" and rem["result"]["calls"] == 41 and rem["result"]["channel"] == "both"
+    finally:
+        client.put("/api/admin/settings", json={"values": {"reminder_channel": "whatsapp"}}, headers=admin)
+    assert client.put("/api/admin/settings", json={"values": {"reminder_channel": "pigeon"}}, headers=admin).status_code == 422
+
+
+def test_reminder_call_real_mode_is_redirected_and_capped(client, merchant, admin, monkeypatch):
+    from app.services import messaging
+    FakeTwilio.sent = []
+    monkeypatch.setattr(messaging, "_twilio_client", lambda db: (FakeTwilio(), {"twilio_voice_number": "+15550001111", "twilio_whatsapp_from": "whatsapp:+15550001111"}))
+    client.put("/api/admin/settings", json={"values": {"mock_mode": False, "reminder_channel": "both", "test_redirect_number": "+919000000001"}}, headers=admin)
+    try:
+        rem = next(a for a in _approve(client, merchant)["actions"] if a["type"] == "udhaar_reminders")
+        calls = [kw for kind, kw in FakeTwilio.sent if kind == "call"]
+        msgs = [kw for kind, kw in FakeTwilio.sent if kind == "msg"]
+        assert len(calls) == 1 and len(msgs) == 3  # trial minutes: one call; WhatsApp stays at the 3-message test cap
+        assert calls[0]["to"] == "+919000000001" and "/api/webhooks/voice/message?m=" in calls[0]["url"]
+        assert all(m["to"] == "whatsapp:+919000000001" for m in msgs)
+        assert rem["status"] == "done"
+        m_id = int(calls[0]["url"].rsplit("=", 1)[1])
+        r = client.post(f"/api/webhooks/voice/message?m={m_id}", data={}, headers={"X-Twilio-Signature": "x"})
+        assert r.status_code == 403  # real mode: unsigned webhook rejected
+    finally:
+        client.put("/api/admin/settings", json={"values": {"mock_mode": True, "reminder_channel": "whatsapp", "test_redirect_number": ""}}, headers=admin)
+
+
+def test_voice_message_webhook_plays_stored_text(client, merchant):
+    from app.db import SessionLocal
+    from app.models import OutboundMessage, Shop
+    with SessionLocal() as db:
+        shop = db.query(Shop).first()
+        m = OutboundMessage(shop_id=shop.id, channel="call", to="+919000000002", body="Namaste Asha ji, udhaar baaki hai.", status="sent")
+        db.add(m)
+        db.commit()
+        mid = m.id
+    r = client.post(f"/api/webhooks/voice/message?m={mid}", data={})
+    assert r.status_code == 200 and "<Play>" in r.text and "<Hangup" in r.text
+    assert client.post("/api/webhooks/voice/message?m=999999", data={}).status_code == 404

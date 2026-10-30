@@ -26,6 +26,7 @@ SCHEMA: dict[str, tuple[str, str | None]] = {
     "twilio_auth_token": ("", "twilio_auth_token"),
     "twilio_voice_number": ("", "twilio_voice_number"),
     "twilio_whatsapp_from": ("whatsapp:+14155238886", "twilio_whatsapp_from"),
+    "reminder_channel": ("whatsapp", None),  # whatsapp | call | both: how udhaar reminders reach customers (calls play Sarvam/Edge/ElevenLabs audio)
     "test_redirect_number": ("", None),  # real mode: send ALL customer/supplier messages & calls here (your sandbox-joined phone)
 }
 

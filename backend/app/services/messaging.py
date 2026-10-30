@@ -47,3 +47,32 @@ def send_whatsapp(db: Session, shop: Shop, *, to: str, body: str, recipient_name
             msg.error = str(e)[:290]
     db.add(msg)
     return msg
+
+
+def place_voice_message(db: Session, shop: Shop, *, to: str, text: str, recipient_name: str = "", customer_id: int | None = None,
+                        action_id: int | None = None) -> OutboundMessage:
+    """One-way phone call that plays `text` as speech (TTS provider from Admin). The text is stored on the record and served by
+    /api/webhooks/voice/message?m=<id>. In mock mode the call is only recorded."""
+    from ..config import get_settings
+
+    mock = settings_store.is_mock(db)
+    msg = OutboundMessage(shop_id=shop.id, action_id=action_id, customer_id=customer_id, channel="call",
+                          to=to, recipient_name=recipient_name, body=text, simulated=mock)
+    db.add(msg)
+    db.flush()
+    if mock:
+        msg.status = "sent"
+        return msg
+    try:
+        client, cfg = _twilio_client(db)
+        if not cfg["twilio_voice_number"]:
+            raise ProviderNotConfigured("Twilio voice number is not set in Admin settings.")
+        dest = resolve_destination(db, to)
+        if not dest:
+            raise ProviderNotConfigured("No destination phone number.")
+        base = get_settings().public_base_url.rstrip("/")
+        call = client.calls.create(to=dest, from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/message?m={msg.id}", method="POST")
+        msg.provider_sid, msg.status, msg.to = call.sid, "sent", dest
+    except Exception as e:  # noqa: BLE001
+        msg.status, msg.error = "failed", str(e)[:290]
+    return msg
