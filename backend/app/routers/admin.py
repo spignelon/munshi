@@ -33,6 +33,13 @@ def put_settings(body: SettingsIn, db: Session = Depends(get_db)):
         raise HTTPException(422, "tts_provider must be sarvam, edge or elevenlabs")
     if "stt_provider" in body.values and body.values["stt_provider"] not in ("sarvam", "groq"):
         raise HTTPException(422, "stt_provider must be sarvam or groq")
+    if body.values.get("twilio_whatsapp_content_vars"):
+        import json
+        try:
+            if not isinstance(json.loads(str(body.values["twilio_whatsapp_content_vars"])), dict):
+                raise ValueError
+        except ValueError:
+            raise HTTPException(422, 'Template variables must be a JSON object, e.g. {"1": "{text}"}')
     if "reminder_channel" in body.values and body.values["reminder_channel"] not in ("whatsapp", "call", "both"):
         raise HTTPException(422, "reminder_channel must be whatsapp, call or both")
     if "sarvam_budget_inr" in body.values:

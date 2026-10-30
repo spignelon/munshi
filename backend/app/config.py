@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_voice_number: str = ""
+    twilio_whatsapp_content_sid: str = ""
     twilio_whatsapp_from: str = "whatsapp:+14155238886"  # Twilio sandbox default
     elevenlabs_api_key: str = ""
     sarvam_api_key: str = ""

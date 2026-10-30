@@ -26,6 +26,10 @@ SCHEMA: dict[str, tuple[str, str | None]] = {
     "twilio_auth_token": ("", "twilio_auth_token"),
     "twilio_voice_number": ("", "twilio_voice_number"),
     "twilio_whatsapp_from": ("whatsapp:+14155238886", "twilio_whatsapp_from"),
+    # Twilio trial/Tryout WhatsApp senders reject free-text API sends ("ContentSid Required"). With a template SID set, sends use it and
+    # {text} in the variables JSON is replaced by Munshi's message (newlines flattened, WhatsApp forbids them in variables).
+    "twilio_whatsapp_content_sid": ("", "twilio_whatsapp_content_sid"),
+    "twilio_whatsapp_content_vars": ('{"1": "{text}"}', None),
     "reminder_channel": ("whatsapp", None),  # whatsapp | call | both: how udhaar reminders reach customers (calls play Sarvam/Edge/ElevenLabs audio)
     "test_redirect_number": ("", None),  # real mode: send ALL customer/supplier messages & calls here (your sandbox-joined phone)
 }

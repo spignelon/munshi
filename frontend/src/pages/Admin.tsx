@@ -160,6 +160,12 @@ function Providers() {
         </div>
         <Field label="Test redirect number" hint="Real mode only: ALL customer/supplier messages and calls go to this number instead (use your sandbox-joined phone). Strongly recommended while testing.">
           {(id) => <Input id={id} value={s.test_redirect_number} onChange={text("test_redirect_number")} placeholder="+91 98xxx xxxxx" />}</Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="WhatsApp template SID (optional)" hint="Needed when Twilio says “ContentSid Required” (trial / Tryout senders only allow approved templates). Looks like HX…">
+            {(id) => <Input id={id} value={s.twilio_whatsapp_content_sid} onChange={text("twilio_whatsapp_content_sid")} placeholder="HXxxxxxxxx" autoComplete="off" />}</Field>
+          <Field label="Template variables (JSON)" hint="{text} is replaced by Munshi's message. Add more keys if the template has more variables.">
+            {(id) => <Input id={id} value={s.twilio_whatsapp_content_vars} onChange={text("twilio_whatsapp_content_vars")} placeholder='{"1": "{text}"}' autoComplete="off" />}</Field>
+        </div>
         <Field label="Udhaar reminders go by" hint="Calls play the reminder in the voice chosen above. While a test redirect number is set, only one call is placed per approval.">
           {(id) => (
             <Select id={id} value={s.reminder_channel} onChange={(e) => set("reminder_channel", e.target.value as S["reminder_channel"])}>
@@ -168,7 +174,7 @@ function Providers() {
               <option value="both">Call + WhatsApp link</option>
             </Select>)}
         </Field>
-        <Button type="button" onClick={() => save.mutate({ reminder_channel: s.reminder_channel, twilio_account_sid: s.twilio_account_sid, twilio_auth_token: s.twilio_auth_token, twilio_voice_number: s.twilio_voice_number, twilio_whatsapp_from: s.twilio_whatsapp_from, test_redirect_number: s.test_redirect_number })} loading={save.isPending}>Save Twilio</Button>
+        <Button type="button" onClick={() => save.mutate({ reminder_channel: s.reminder_channel, twilio_whatsapp_content_sid: s.twilio_whatsapp_content_sid, twilio_whatsapp_content_vars: s.twilio_whatsapp_content_vars, twilio_account_sid: s.twilio_account_sid, twilio_auth_token: s.twilio_auth_token, twilio_voice_number: s.twilio_voice_number, twilio_whatsapp_from: s.twilio_whatsapp_from, test_redirect_number: s.test_redirect_number })} loading={save.isPending}>Save Twilio</Button>
 
         <div className="space-y-3 border-t border-cream-200 pt-4">
           <p className="text-sm font-semibold">Paste these into the Twilio console</p>

@@ -189,3 +189,22 @@ def test_supplier_call_webhooks_accept_our_capability_urls_only(client, merchant
         with SessionLocal() as db:
             db.query(AppSetting).filter(AppSetting.key == "twilio_auth_token").delete()
             db.commit()
+
+
+def test_whatsapp_uses_template_when_configured_and_explains_contentsid_error(client, merchant, admin, monkeypatch):
+    import json
+    from app.services import messaging
+    FakeTwilio.sent = []
+    monkeypatch.setattr(messaging, "_twilio_client", lambda db: (FakeTwilio(), {
+        "twilio_whatsapp_from": "whatsapp:+15550001111", "twilio_whatsapp_content_sid": "HX123", "twilio_whatsapp_content_vars": '{"1": "{text}", "2": "Munshi"}'}))
+    client.put("/api/admin/settings", json={"values": {"mock_mode": False, "test_redirect_number": "+919000000004"}}, headers=admin)
+    try:
+        _approve(client, merchant)
+        kw = next(kw for kind, kw in FakeTwilio.sent if kind == "msg")
+        assert "body" not in kw and kw["content_sid"] == "HX123"
+        v = json.loads(kw["content_variables"])
+        assert v["2"] == "Munshi" and "\n" not in v["1"] and "baaki hai" in v["1"]
+        assert client.put("/api/admin/settings", json={"values": {"twilio_whatsapp_content_vars": "[1]"}}, headers=admin).status_code == 422
+    finally:
+        client.put("/api/admin/settings", json={"values": {"mock_mode": True, "test_redirect_number": ""}}, headers=admin)
+    assert "WhatsApp template SID" in messaging._friendly("HTTP 400 error: Unable to create record: ContentSid Required")
