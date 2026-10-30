@@ -66,8 +66,8 @@ def place_real_call(db: Session, shop: Shop, action: Action) -> CallSession:
     db.flush()
     base = get_settings().public_base_url.rstrip("/")
     call = client.calls.create(
-        to=dest, from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/supplier?cs={cs.id}", method="POST",
-        status_callback=f"{base}/api/webhooks/voice/status?cs={cs.id}", status_callback_method="POST",
+        to=dest, from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/supplier?cs={cs.id}",
+        status_callback=f"{base}/api/webhooks/voice/status?cs={cs.id}",
         status_callback_event=["completed"])
     cs.twilio_sid = call.sid
     return cs

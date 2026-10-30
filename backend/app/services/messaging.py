@@ -71,7 +71,7 @@ def place_voice_message(db: Session, shop: Shop, *, to: str, text: str, recipien
         if not dest:
             raise ProviderNotConfigured("No destination phone number.")
         base = get_settings().public_base_url.rstrip("/")
-        call = client.calls.create(to=dest, from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/message?m={msg.id}", method="POST")
+        call = client.calls.create(to=dest, from_=cfg["twilio_voice_number"], url=f"{base}/api/webhooks/voice/message?m={msg.id}")
         msg.provider_sid, msg.status, msg.to = call.sid, "sent", dest
     except Exception as e:  # noqa: BLE001
         msg.status, msg.error = "failed", str(e)[:290]

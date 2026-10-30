@@ -128,6 +128,8 @@ def test_reminder_call_real_mode_is_redirected_and_capped(client, merchant, admi
         calls = [kw for kind, kw in FakeTwilio.sent if kind == "call"]
         msgs = [kw for kind, kw in FakeTwilio.sent if kind == "msg"]
         assert len(calls) == 1 and len(msgs) == 3  # trial minutes: one call; WhatsApp stays at the 3-message test cap
+        # Twilio trial accounts reject Method / StatusCallbackMethod / Timeout / Twiml with "limited parameter access"
+        assert set(calls[0]) <= {"to", "from_", "url", "status_callback", "status_callback_event"}
         assert calls[0]["to"] == "+919000000001" and "/api/webhooks/voice/message?m=" in calls[0]["url"]
         assert all(m["to"] == "whatsapp:+919000000001" for m in msgs)
         assert rem["status"] == "done"
