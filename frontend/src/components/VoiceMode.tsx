@@ -125,7 +125,8 @@ export function VoiceMode({ onClose, initialText }: { onClose: () => void; initi
         <div className="mt-2 grid place-items-center sm:mt-6">
           <button type="button" onClick={() => sessionRef.current?.interrupt()} aria-label={state === "speaking" ? "Munshi ko roken" : "Munshi"} disabled={state !== "speaking"}
             ref={orbRef} style={{ ["--lvl" as string]: 0 }} data-testid="avatar-frame"
-            className="relative grid size-52 place-items-center rounded-full sm:size-72 focus-visible:outline-offset-8">
+            className={clsx("relative grid place-items-center rounded-full transition-[width,height] duration-300 focus-visible:outline-offset-8",
+              plan ? "size-36 sm:size-44" : "size-52 sm:size-72")}>
             <span className={clsx("avatar-halo absolute -inset-3 rounded-full bg-saffron-500/20 transition-opacity", live || state === "speaking" ? "opacity-100" : "opacity-40")} aria-hidden />
             <span className="relative block size-full overflow-hidden rounded-full border-4 border-saffron-500/80 bg-[radial-gradient(circle_at_50%_30%,#34457a,#111b33_72%)] shadow-[0_0_70px_rgba(232,145,45,0.35)]">
               <Avatar state={state} muted={muted} />

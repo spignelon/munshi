@@ -10,7 +10,7 @@ import { useAuth } from "../lib/auth";
 import { compact, firstName, inr, shortDay } from "../lib/format";
 import type { Dashboard as Dash, Plan } from "../lib/types";
 
-const SAMPLE_PROMPT = "Stock check karo, main supplier ko order do, aur udhaar wapas lao.";
+const SAMPLE_PROMPT = "Stock check karo, supplier ko order do, aur udhaar wapas lao.";
 
 export default function Dashboard() {
   const { session } = useAuth();

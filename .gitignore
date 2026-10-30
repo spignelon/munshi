@@ -24,7 +24,8 @@ dist/
 test-results/
 playwright-report/
 frontend/e2e/.auth/
-screenshots/
+/screenshots/
+/frontend/screenshots/
 
 # os/editor
 .DS_Store

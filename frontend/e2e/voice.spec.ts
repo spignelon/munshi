@@ -18,7 +18,7 @@ test("voice mode: listens, detects the end of speech, plans, and approves from i
   await expect(page.getByTestId("voice-reply")).not.toBeEmpty();
 
   await page.getByRole("button", { name: "Mute mic" }).click(); // stop the looping fake mic from starting another turn
-  await expect(page.getByTestId("voice-status")).toContainText("mute");
+  await expect(page.getByTestId("voice-status")).toContainText("mute", { timeout: 30_000 }); // idle label appears once her reply finishes playing
   await plan.getByRole("button", { name: "Haan, karo" }).click();
   await expect(plan).toContainText("done", { timeout: 30_000 });
   await expect(plan).toContainText(/chhoot/);
