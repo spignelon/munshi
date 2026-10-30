@@ -7,6 +7,7 @@ from urllib.parse import quote
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from .config import ON_VERCEL, get_settings
 
@@ -25,7 +26,9 @@ def _build_engine():
         host = s.turso_database_url.replace("libsql://", "").rstrip("/")
         # NOTE: the dialect ignores ?authToken= in the URL; it must go via connect_args.
         url = f"sqlite+libsql://{quote(host)}/?secure=true"
-        engine = create_engine(url, connect_args={"auth_token": s.turso_auth_token}, pool_pre_ping=False)
+        # NullPool: open a fresh connection per checkout. Serverless instances are frozen between requests, so a pooled
+        # remote connection can be silently dead on thaw and hang the next request; sin1 -> Turso connects in a few ms.
+        engine = create_engine(url, connect_args={"auth_token": s.turso_auth_token}, poolclass=NullPool)
         return engine, "turso"
 
     path = "/tmp/munshi.db" if ON_VERCEL else "./munshi.db"

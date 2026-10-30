@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Logo } from "../components/Logo";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { useAuth } from "../lib/auth";
+import { withSlowHint } from "../lib/slow";
 
 const features = [
   { icon: Mic, t: "Voice & text commands", d: "Speak or type in Hindi, Hinglish or English — in the app, as a WhatsApp voice note, or over a phone call." },
@@ -27,7 +28,7 @@ export default function Landing() {
   const [busy, setBusy] = useState(false);
   const tryDemo = async () => {
     setBusy(true);
-    try { await demo(); navigate("/app"); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { await withSlowHint(demo()); navigate("/app"); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
   return (

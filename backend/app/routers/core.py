@@ -75,8 +75,10 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
 @router.post("/auth/demo")
 def demo_login(db: Session = Depends(get_db)):
     s = get_settings()
-    seed.bootstrap(db)
-    user = db.query(User).filter(User.email == s.demo_email.lower()).one()
+    user = db.query(User).filter(User.email == s.demo_email.lower()).first()
+    if not user:  # only on a brand-new database; normally init_db() already created it at startup
+        seed.bootstrap(db)
+        user = db.query(User).filter(User.email == s.demo_email.lower()).one()
     shop = db.query(Shop).filter(Shop.owner_id == user.id).one()
     if not shop.demo_loaded:
         seed.seed_demo(db, shop)

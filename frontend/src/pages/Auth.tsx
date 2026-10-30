@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Logo } from "../components/Logo";
 import { Button, Eyebrow, ErrorNote, Field, Input } from "../components/ui";
 import { useAuth } from "../lib/auth";
+import { withSlowHint } from "../lib/slow";
 
 function AuthLayout({ title, sub, children, footer }: { title: string; sub: string; children: ReactNode; footer: ReactNode }) {
   return (
@@ -46,11 +47,11 @@ export function Login() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr(null); setBusy("login");
-    try { await login(email, password); navigate(from, { replace: true }); } catch (x) { setErr(x); } finally { setBusy(null); }
+    try { await withSlowHint(login(email, password)); navigate(from, { replace: true }); } catch (x) { setErr(x); } finally { setBusy(null); }
   };
   const tryDemo = async () => {
     setBusy("demo");
-    try { await demo(); navigate("/app"); } catch (x) { toast.error((x as Error).message); } finally { setBusy(null); }
+    try { await withSlowHint(demo()); navigate("/app"); } catch (x) { toast.error((x as Error).message); } finally { setBusy(null); }
   };
   return (
     <AuthLayout title="Welcome back" sub="Log in to your Munshi dashboard." footer={<>New here? <Link to="/signup" className="font-bold text-saffron-700 underline">Create an account</Link></>}>

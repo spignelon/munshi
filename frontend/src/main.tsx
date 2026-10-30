@@ -11,6 +11,7 @@ import "./index.css";
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false, staleTime: 15_000 } } });
 
 registerServiceWorker();
+fetch("/api/health", { cache: "no-store" }).catch(() => {}); // wake the serverless API (and its DB connection) while the user reads the page
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
