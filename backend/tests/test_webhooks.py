@@ -122,7 +122,7 @@ def test_reminder_call_real_mode_is_redirected_and_capped(client, merchant, admi
     from app.services import messaging
     FakeTwilio.sent = []
     monkeypatch.setattr(messaging, "_twilio_client", lambda db: (FakeTwilio(), {"twilio_voice_number": "+15550001111", "twilio_whatsapp_from": "whatsapp:+15550001111"}))
-    client.put("/api/admin/settings", json={"values": {"mock_mode": False, "reminder_channel": "both", "test_redirect_number": "+919000000001"}}, headers=admin)
+    client.put("/api/admin/settings", json={"values": {"mock_mode": False, "reminder_channel": "both", "test_redirect_number": "+919000000001", "twilio_auth_token": "tok12345"}}, headers=admin)
     try:
         rem = next(a for a in _approve(client, merchant)["actions"] if a["type"] == "udhaar_reminders")
         calls = [kw for kind, kw in FakeTwilio.sent if kind == "call"]
@@ -139,7 +139,12 @@ def test_reminder_call_real_mode_is_redirected_and_capped(client, merchant, admi
         assert client.post(f"/api/webhooks/voice/message?m={m_id}&k=nope", data={}).status_code == 403  # forged token
         assert client.post("/api/webhooks/voice/message?" + url.split("?")[1], data={}).status_code == 200  # our own capability URL
     finally:
-        client.put("/api/admin/settings", json={"values": {"mock_mode": True, "reminder_channel": "whatsapp", "test_redirect_number": ""}}, headers=admin)
+        client.put("/api/admin/settings", json={"values": {"mock_mode": True, "reminder_channel": "whatsapp", "test_redirect_number": "", "twilio_auth_token": ""}}, headers=admin)
+        from app.db import SessionLocal
+        from app.models import AppSetting
+        with SessionLocal() as db:
+            db.query(AppSetting).filter(AppSetting.key == "twilio_auth_token").delete()
+            db.commit()
 
 
 def test_voice_message_webhook_plays_stored_text(client, merchant):
