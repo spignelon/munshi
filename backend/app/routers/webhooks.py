@@ -1,4 +1,5 @@
 """Twilio webhooks: WhatsApp (sandbox) and voice (supplier calls + inbound calls to Munshi)."""
+import json
 import re
 from urllib.parse import urlencode
 
@@ -30,7 +31,13 @@ async def _form(request: Request, db: Session) -> dict:
     if not token:
         raise HTTPException(403, "Twilio auth token not configured")
     url = get_settings().public_base_url.rstrip("/") + request.url.path + (f"?{request.url.query}" if request.url.query else "")
-    if not RequestValidator(token).validate(url, form, request.headers.get("X-Twilio-Signature", "")):
+    sig = request.headers.get("X-Twilio-Signature", "")
+    validator = RequestValidator(token)
+    if not validator.validate(url, form, sig):
+        # no secrets: the URL we signed against, field names and 6-char signature prefixes are enough to see what differs
+        print(json.dumps({"twilio_sig_fail": {"url": url, "ctype": request.headers.get("content-type", ""), "fields": sorted(form),
+                                              "got": sig[:6], "want": validator.compute_signature(url, form)[:6],
+                                              "host": request.headers.get("host", ""), "proto": request.headers.get("x-forwarded-proto", "")}}))
         raise HTTPException(403, "Invalid Twilio signature")
     return form
 
