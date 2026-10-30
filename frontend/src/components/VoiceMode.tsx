@@ -111,7 +111,7 @@ export function VoiceMode({ onClose }: { onClose: () => void }) {
             ref={orbRef} style={{ ["--lvl" as string]: 0 }}
             className="relative grid size-40 place-items-center rounded-full sm:size-64 focus-visible:outline-offset-8">
             {(live || state === "speaking") && <span className="orb-ring absolute inset-0 rounded-full bg-saffron-500/25" aria-hidden />}
-            <span className={clsx("absolute inset-6 rounded-full bg-gradient-to-br from-saffron-400 to-saffron-600 shadow-[0_0_80px_rgba(232,145,45,0.45)]",
+            <span className={clsx("absolute inset-4 rounded-full bg-gradient-to-br sm:inset-6 from-saffron-400 to-saffron-600 shadow-[0_0_80px_rgba(232,145,45,0.45)]",
               state === "speaking" && "orb-speak", state === "thinking" && "orb-think", live && "orb-live")} aria-hidden />
             {state === "thinking" && <span className="absolute inset-2 animate-spin rounded-full border-4 border-transparent border-t-saffron-400/80" aria-hidden />}
             <span className="relative text-navy-900">{muted ? <MicOff className="size-10" aria-hidden /> : <Mic className="size-10" aria-hidden />}</span>
