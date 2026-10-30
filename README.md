@@ -17,7 +17,8 @@ phones the supplier, WhatsApps udhaar reminders with UPI pay links, invites back
 
 | Area | What it does |
 |---|---|
-| **Voice & text** | Mic button (web), WhatsApp voice notes and inbound phone calls → Groq **`whisper-large-v3-turbo`** (Hindi hint + shop vocabulary prompt). Replies are spoken back with edge-tts or ElevenLabs |
+| **Voice mode** | A full-screen, hands-free conversation (like ChatGPT voice): Munshi listens continuously, detects when you stop talking, answers in voice, and you can interrupt it. Say “haan” / “nahi” to approve or reject a plan, or tap the buttons. Only detected speech is uploaded |
+| **Voice & text** | Mic button, WhatsApp voice notes and phone calls. Speech-to-text: **Sarvam Saaras** (built for Indian languages, `codemix` mode keeps English words in Hinglish) with automatic fallback to Groq **`whisper-large-v3-turbo`**. Speech out: **Sarvam Bulbul**, edge-tts or ElevenLabs |
 | **Planning** | Groq **`openai/gpt-oss-120b`** reads a compact snapshot of Paytm sales, udhaar, stock, lapsed customers and suppliers, replies in the owner's language and proposes actions |
 | **Actions** | Supplier phone calls (Twilio Voice, per-turn Whisper ↔ LLM ↔ TTS), WhatsApp udhaar reminders with UPI/Paytm pay links, win-back offers, working-capital loan pre-offer, stock report, daily summary |
 | **Approvals & safety** | Plan cards with per-action approve/reject; `haan`/`yes`/`nahi` by text, voice or WhatsApp; per-order and daily spend caps re-checked at execution; reminder cooldown; every action links to its approval; audit log |
@@ -125,6 +126,12 @@ Use **Send test WhatsApp** / **Place test call** in the admin panel to verify cr
 ### ElevenLabs (optional)
 Admin → Providers → **Voice → ElevenLabs**: paste API key + Voice ID (model defaults to `eleven_multilingual_v2`) → *Preview voice* → *Save voice*.
 If the key is missing or ElevenLabs errors, speech silently falls back to the free **edge-tts** Hindi voices (`hi-IN-SwaraNeural` / `hi-IN-MadhurNeural`).
+
+### Sarvam (Indic speech) and credits
+Admin → Providers → Voice. Create a key at https://indus.sarvam.ai/key-management and paste it (or set `SARVAM_API_KEY`). Listening defaults to **Saaras v4**, speaking to **Bulbul v4 Flash** (voice selectable). Credits are limited, so:
+* every call is **metered** (speech-to-text minutes, characters spoken) and shown in Admin → System as an estimated ₹ spend (GST included);
+* a **budget guard** (default ₹85) switches to Groq Whisper / Edge voice automatically once the estimate reaches it, and also on any Sarvam error (402 out of credits, 429, network);
+* only speech is uploaded (silence never is), replies are capped at ~320 characters, long replies are synthesized as parallel sentence chunks (same characters, ~half the latency), and voice mode closes itself after 60 s of silence.
 
 ### Groq free-tier limits (respected in code)
 `services/groq_client.py` keeps a sliding 60 s window per model (≈85 % of 30 RPM / 8K TPM), waits briefly or returns a friendly *"Munshi is busy, try in N s"* (HTTP 429 → UI toast),
