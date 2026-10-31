@@ -11,9 +11,18 @@ class ProviderNotConfigured(Exception):
     pass
 
 
+def _last10(p: str) -> str:
+    return "".join(ch for ch in (p or "") if ch.isdigit())[-10:]
+
+
 def resolve_destination(db: Session, phone: str) -> str:
-    """Real mode safety net: an admin 'test redirect number' overrides every customer/supplier number."""
+    """Real mode safety net: an admin 'test redirect number' overrides every customer/supplier number,
+    except numbers on the allow-list (test_allowed_numbers), which are contacted as-is."""
     redirect = settings_store.get(db, "test_redirect_number").strip()
+    if redirect:
+        allowed = {_last10(n) for n in settings_store.get(db, "test_allowed_numbers").split(",") if n.strip()}
+        if _last10(phone) and _last10(phone) in allowed:
+            return phone
     return redirect or phone
 
 

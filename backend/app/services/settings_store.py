@@ -31,6 +31,7 @@ SCHEMA: dict[str, tuple[str, str | None]] = {
     "twilio_whatsapp_content_sid": ("", "twilio_whatsapp_content_sid"),
     "twilio_whatsapp_content_vars": ('{"1": "{text}"}', None),
     "reminder_channel": ("whatsapp", None),  # whatsapp | call | both: how udhaar reminders reach customers (calls play Sarvam/Edge/ElevenLabs audio)
+    "test_allowed_numbers": ("", None),  # comma-separated numbers that are NOT redirected (e.g. a friend helping test); everyone else still goes to the redirect
     "test_redirect_number": ("", None),  # real mode: send ALL customer/supplier messages & calls here (your sandbox-joined phone)
 }
 

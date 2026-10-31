@@ -208,3 +208,20 @@ def test_whatsapp_uses_template_when_configured_and_explains_contentsid_error(cl
     finally:
         client.put("/api/admin/settings", json={"values": {"mock_mode": True, "test_redirect_number": ""}}, headers=admin)
     assert "WhatsApp template SID" in messaging._friendly("HTTP 400 error: Unable to create record: ContentSid Required")
+
+
+def test_allow_listed_number_bypasses_the_test_redirect(client, merchant, admin, monkeypatch):
+    from app.services import messaging
+    FakeTwilio.sent = []
+    monkeypatch.setattr(messaging, "_twilio_client", lambda db: (FakeTwilio(), {"twilio_voice_number": "+15550001111"}))
+    client.put("/api/admin/settings", json={"values": {"mock_mode": False, "test_redirect_number": "+919000000009",
+                                                       "test_allowed_numbers": "82871 70671, +919111111111"}}, headers=admin)
+    try:
+        from app.db import SessionLocal
+        with SessionLocal() as db:
+            assert messaging.resolve_destination(db, "+918287170671") == "+918287170671"  # friend: as-is
+            assert messaging.resolve_destination(db, "8287170671") == "8287170671"
+            assert messaging.resolve_destination(db, "+910000000131") == "+919000000009"  # everyone else: redirected
+        assert client.get("/api/admin/settings", headers=admin).json()["settings"]["test_allowed_numbers"] == "+918287170671,+919111111111"
+    finally:
+        client.put("/api/admin/settings", json={"values": {"mock_mode": True, "test_redirect_number": "", "test_allowed_numbers": ""}}, headers=admin)
