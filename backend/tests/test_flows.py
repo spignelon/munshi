@@ -243,7 +243,7 @@ def test_planner_data_lists_every_customer_balance(client, merchant):
     from app.models import Shop
     from app.services import business
     with SessionLocal() as db:
-        shop = db.query(Shop).filter(Shop.name == "Kumar General Store").first() or db.query(Shop).first()
+        shop = db.get(Shop, client.get("/api/auth/me", headers=merchant).json()["shop"]["id"])
         snap = business.snapshot(db, shop)
     line = next(l for l in snap.splitlines() if l.startswith("Udhaar"))
     owing = line.count(";") + 1
