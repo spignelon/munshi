@@ -208,3 +208,10 @@ def test_whatsapp_uses_template_when_configured_and_explains_contentsid_error(cl
     finally:
         client.put("/api/admin/settings", json={"values": {"mock_mode": True, "test_redirect_number": ""}}, headers=admin)
     assert "WhatsApp template SID" in messaging._friendly("HTTP 400 error: Unable to create record: ContentSid Required")
+
+
+def test_template_without_variables_sends_only_contentsid():
+    """Twilio trial senders allow only to/from/ContentSid/statusCallback, so `{}` must omit ContentVariables entirely."""
+    from app.services import messaging
+    assert messaging._content_args({"twilio_whatsapp_content_sid": "HX9", "twilio_whatsapp_content_vars": "{}"}, "hello") == {"content_sid": "HX9"}
+    assert messaging._content_args({}, "hello") == {"body": "hello"}
