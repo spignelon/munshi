@@ -160,8 +160,6 @@ function Providers() {
         </div>
         <Field label="Test redirect number" hint="Real mode only: ALL customer/supplier messages and calls go to this number instead (use your sandbox-joined phone). Strongly recommended while testing.">
           {(id) => <Input id={id} value={s.test_redirect_number} onChange={text("test_redirect_number")} placeholder="+91 98xxx xxxxx" />}</Field>
-        <Field label="Numbers that skip the redirect" hint="Comma-separated. These numbers (for example a friend helping you test) are contacted directly even while the redirect is on.">
-          {(id) => <Input id={id} value={s.test_allowed_numbers} onChange={text("test_allowed_numbers")} placeholder="+91 98xxx xxxxx, +91 …" />}</Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="WhatsApp template SID (optional)" hint="Needed when Twilio says “ContentSid Required” (trial / Tryout senders only allow approved templates). Looks like HX…">
             {(id) => <Input id={id} value={s.twilio_whatsapp_content_sid} onChange={text("twilio_whatsapp_content_sid")} placeholder="HXxxxxxxxx" autoComplete="off" />}</Field>
@@ -176,7 +174,7 @@ function Providers() {
               <option value="both">Call + WhatsApp link</option>
             </Select>)}
         </Field>
-        <Button type="button" onClick={() => save.mutate({ test_allowed_numbers: s.test_allowed_numbers, reminder_channel: s.reminder_channel, twilio_whatsapp_content_sid: s.twilio_whatsapp_content_sid, twilio_whatsapp_content_vars: s.twilio_whatsapp_content_vars, twilio_account_sid: s.twilio_account_sid, twilio_auth_token: s.twilio_auth_token, twilio_voice_number: s.twilio_voice_number, twilio_whatsapp_from: s.twilio_whatsapp_from, test_redirect_number: s.test_redirect_number })} loading={save.isPending}>Save Twilio</Button>
+        <Button type="button" onClick={() => save.mutate({ reminder_channel: s.reminder_channel, twilio_whatsapp_content_sid: s.twilio_whatsapp_content_sid, twilio_whatsapp_content_vars: s.twilio_whatsapp_content_vars, twilio_account_sid: s.twilio_account_sid, twilio_auth_token: s.twilio_auth_token, twilio_voice_number: s.twilio_voice_number, twilio_whatsapp_from: s.twilio_whatsapp_from, test_redirect_number: s.test_redirect_number })} loading={save.isPending}>Save Twilio</Button>
 
         <div className="space-y-3 border-t border-cream-200 pt-4">
           <p className="text-sm font-semibold">Paste these into the Twilio console</p>

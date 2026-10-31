@@ -48,8 +48,6 @@ def put_settings(body: SettingsIn, db: Session = Depends(get_db)):
                 raise ValueError
         except ValueError:
             raise HTTPException(422, "sarvam_budget_inr must be a non-negative number")
-    if body.values.get("test_allowed_numbers"):
-        body.values["test_allowed_numbers"] = ",".join(norm_phone(n) for n in str(body.values["test_allowed_numbers"]).split(",") if n.strip())
     if body.values.get("test_redirect_number"):
         body.values["test_redirect_number"] = norm_phone(str(body.values["test_redirect_number"]))
     settings_store.update(db, body.values)
