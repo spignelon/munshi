@@ -31,10 +31,8 @@ def _content_args(cfg: dict, body: str) -> dict:
     sid = (cfg.get("twilio_whatsapp_content_sid") or "").strip()
     if not sid:
         return {"body": body}
-    raw = cfg.get("twilio_whatsapp_content_vars") or '{"1": "{text}"}'
-    if raw.strip() in ("", "{}"):  # trial senders accept only ContentSid (no ContentVariables): the template's own fixed wording is sent
-        return {"content_sid": sid}
     flat = " ".join(body.split())[:900]  # variables can't hold newlines/tabs/runs of spaces
+    raw = cfg.get("twilio_whatsapp_content_vars") or '{"1": "{text}"}'
     try:
         variables = {k: str(v).replace("{text}", flat) for k, v in json.loads(raw).items()}
     except (ValueError, AttributeError):
