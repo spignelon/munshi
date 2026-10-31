@@ -158,6 +158,9 @@ def find_supplier(db: Session, shop: Shop, name_hint: str | None) -> Supplier | 
     return best
 
 
+MAX_LEDGER_IN_SNAPSHOT = 60
+
+
 def snapshot(db: Session, shop: Shop) -> str:
     """Compact (~250 token) context for the planner."""
     f = festival()
@@ -167,13 +170,15 @@ def snapshot(db: Session, shop: Shop) -> str:
     lines = festive_order_lines(db, shop, sup.id) if sup else []
     lapsed = lapsed_customers(db, shop)
     loan = loan_offer(db, shop)
-    top = ", ".join(f"{c.name.split()[0]} {inr(b)}" for c, b in bal[:3]) or "none"
+    # the planner can only answer "how much does X owe" for customers it can see, so list everyone (biggest first, capped for token budget)
+    top = "; ".join(f"{c.name} {int(b)}" for c, b in bal[:MAX_LEDGER_IN_SNAPSHOT]) or "none"
+    more = f" (+{len(bal) - MAX_LEDGER_IN_SNAPSHOT} smaller balances not listed)" if len(bal) > MAX_LEDGER_IN_SNAPSHOT else ""
     low = ", ".join(f"{l['name']}({int(l['stock'])} left, last yr {int(l['last_festival_units'])})" for l in lines[:4]) or "none"
     sups = "; ".join(f"{s.name} [{s.categories}]" for s in db.query(Supplier).filter(Supplier.shop_id == shop.id).all()) or "none"
     return (
         f"Shop: {shop.name}, {shop.locality}. Today {clock.today().isoformat()}. {f['name']} in {f['days_away']} days.\n"
         f"Paytm sales: today so far {inr(sm['today'])}, yesterday {inr(sm['yesterday'])}, 7-day avg {inr(sm['avg_7d'])}.\n"
-        f"Udhaar: {len(bal)} customers owe {inr(sum(b for _, b in bal))}; top: {top}.\n"
+        f"Udhaar: {len(bal)} customers owe {inr(sum(b for _, b in bal))}. Each customer's balance in rupees: {top}{more}.\n"
         f"Festive low stock: {len(lines)} items need restocking (~{inr(lines_total(lines))} from {sup.name if sup else 'n/a'}); e.g. {low}.\n"
         f"Lapsed regulars (>{LAPSED_DAYS}d): {len(lapsed)}.\n"
         f"Suppliers: {sups}.\n"

@@ -235,3 +235,16 @@ def test_reminder_can_target_one_customer_and_explains_cooldown(client, merchant
     again = cmd(client, merchant, "Manoj ko udhaar reminder bhejo")
     blocked = next(a for a in again["plan"]["actions"] if a["type"] == "udhaar_reminders")
     assert blocked["status"] == "blocked" and "48 ghante" in blocked["blocked_reason"]
+
+
+def test_planner_data_lists_every_customer_balance(client, merchant):
+    """'Manoj ka kitna udhaar hai' must be answerable: the planner sees each customer's balance, not just the top 3."""
+    from app.db import SessionLocal
+    from app.models import Shop
+    from app.services import business
+    with SessionLocal() as db:
+        shop = db.query(Shop).filter(Shop.name == "Kumar General Store").first() or db.query(Shop).first()
+        snap = business.snapshot(db, shop)
+    line = next(l for l in snap.splitlines() if l.startswith("Udhaar"))
+    owing = line.count(";") + 1
+    assert owing > 20 and "Manoj Kapoor" in line
